@@ -78,16 +78,34 @@ https://www.cloudways.com/en/?id=<你的ID>&utm_source=cloudways-guide&utm_mediu
 > | `/en/pricing/`、`/en/support/` | 目录写法 → 404 |
 > | `/en/` | ✅ 首页，`?id=` 在此生效并写入联盟 cookie |
 > | `/en/pricing.php`、`/en/support.php` | ✅ 真实页面 |
+> | `/en/pricing.php#do` | ❌ 死片段，见下方说明 |
 >
 > 这类错误**构建期完全不报错**，页面照常生成、链接照常渲染，只有真人点下去才 404。
-> 因此做了三道防线：
+> 因此做了四道防线：
 >
-> 1. 路径只在 `src/consts.ts` 的 `CLOUDWAYS` 里定义（**不要在组件里硬编码**）；
+> 1. 路径只在 `src/consts.ts` 里定义（**不要在组件里硬编码**）：
+>    `CLOUDWAYS`（通用页面）+ `CLOUDWAYS_PROVIDER_PAGES`（各云厂商专属落地页）；
 > 2. `ctaPath` 的 Zod schema 用 `refine` 卡住白名单，写错直接构建失败；
-> 3. `npm run check:affiliate` 静态校验 + `npm run check:affiliate -- --live` 联网实测，
+> 3. 再加一层 `refine` 检查 **ctaPath 与 provider 是否对应** —— 防止「把 Vultr 的页面
+>    配给 DigitalOcean」这种复制粘贴错误（跳错站比 404 更难被发现）；
+> 4. `npm run check:affiliate` 静态校验 + `npm run check:affiliate -- --live` 联网实测，
 >    静态层已挂到 `prebuild`。
 >
-> 新增落地页时：先确认页面真实存在，再写进 `CLOUDWAYS`，然后跑一次 `--live`。
+> 新增落地页时：先确认页面真实存在，再写进 `src/consts.ts`，然后跑一次 `--live`。
+>
+> #### 为什么「部署」按钮不用 `pricing.php#do` 这类锚点
+>
+> Cloudways 定价页的 `#do` / `#vultr` / `#linode` / `#aws` / `#gc` 是
+> **Bootstrap 标签页触发器**（位于 `ul.server_pricing_tabs`），对应的面板由 JS
+> 动态加载，静态 HTML 里根本没有 `id="do"` 元素；而站点那段「按 hash 激活标签」的代码
+> 只作用于顶层 `.nav-tabs`（Flexible / Autonomous 那一组），管不到厂商标签。
+> 结果：外链带 `#do` 既不会切标签、也不会滚动（无对应 id，浏览器无处可跳），是个死片段。
+>
+> 正确做法是用**厂商专属落地页**（`CLOUDWAYS_PROVIDER_PAGES`）：
+> `/en/digital-ocean-cloud-hosting.php`、`/en/vultr-hosting.php`、
+> `/en/linode-hosting.php`、`/en/amazon-cloud-hosting.php`、
+> `/en/managed-google-compute-engine.php` —— 实测 HTTP 200、不是 Cloudways 的 404 模板、
+> 且都加载了 `affiliateCookieHandler.js`，`?id=` 归因不丢。访客一跳直达对应厂商方案。
 
 组件层面统一使用 `AffiliateButton.astro`，它会自动附加
 `rel="sponsored nofollow noopener"`，符合搜索引擎对商业链接的规范要求。

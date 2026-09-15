@@ -1,7 +1,13 @@
 import { defineCollection } from 'astro:content';
 import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
-import { CATEGORY_KEYS, CLOUDWAYS, CLOUDWAYS_ALLOWED_PATHS, PROVIDERS } from './consts';
+import {
+  CATEGORY_KEYS,
+  CLOUDWAYS,
+  CLOUDWAYS_ALLOWED_PATHS,
+  CLOUDWAYS_PROVIDER_PAGES,
+  PROVIDERS,
+} from './consts';
 
 /* =========================================================
    通用片段
@@ -48,7 +54,7 @@ const planSchema = z.object({
   bestFor: z.string().optional(),
 });
 
-const productSchema = z.object({
+const productBaseSchema = z.object({
   /** 厂商展示名 */
   name: z.string(),
   /** 厂商枚举键，与 consts.ts 的 PROVIDERS 对应 */
@@ -93,7 +99,7 @@ const productSchema = z.object({
    */
   ctaPath: z
     .string()
-    .default(CLOUDWAYS.signup)
+    .default(CLOUDWAYS.pricing)
     .refine((v) => CLOUDWAYS_ALLOWED_PATHS.includes(v), {
       message:
         `ctaPath 必须是实测可用的 Cloudways 落地页路径，可选值：` +
@@ -108,6 +114,27 @@ const productSchema = z.object({
   priceCheckedAt: z.coerce.date().optional(),
   seo: seoBlock,
 });
+
+/**
+ * 「部署」按钮的落地页必须与厂商对得上。
+ *
+ * 为什么单独加这一层：字段级 refine 只能看到自己的值，看不到同级的 `provider`，
+ * 所以「DigitalOcean 的记录配了 Vultr 的落地页」这种复制粘贴错误它能放行 ——
+ * 而这类错误构建期不报错、线上点下去才发现跳错站，是最难发现的一类事故。
+ */
+const productSchema = productBaseSchema.refine(
+  (data) => {
+    const owner = (Object.entries(CLOUDWAYS_PROVIDER_PAGES) as [string, string][]).find(
+      ([, path]) => path === data.ctaPath,
+    )?.[0];
+    return !owner || owner === data.provider;
+  },
+  {
+    message:
+      'ctaPath 用了别家云厂商的专属落地页，请改成与本条 provider 对应的 CLOUDWAYS_PROVIDER_PAGES 值，或统一用 /en/pricing.php',
+    path: ['ctaPath'],
+  },
+);
 
 /* =========================================================
    articles —— 文章系统

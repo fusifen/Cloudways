@@ -72,10 +72,47 @@ export const CLOUDWAYS = {
   support: '/en/support.php',
 } as const;
 
+/**
+ * 各云厂商在 Cloudways 上的**专属落地页** —— 也就是「部署 / 部署此方案」按钮的目标。
+ *
+ * 这些路径取自 Cloudways 官网页脚 "Cloud Infrastructure" 分组，均**实测**：
+ *   HTTP 200 · 不是它自己的 404 模板 · 页面内加载了 affiliateCookieHandler.js
+ *   （所以 `?id=1379004` 会在该页写入联盟 cookie，归因不丢）
+ *
+ * ⚠️ 为什么**不用** pricing.php 的 `#do` / `#vultr` 这类锚点：
+ *   那些 `#do` 是 Bootstrap **标签页触发器**（位于 `ul.server_pricing_tabs`），
+ *   对应的面板由 JS 动态加载，静态 HTML 里根本没有 `id="do"` 的元素；
+ *   而站点里那段「按 hash 激活标签」的代码只作用于顶层 `.nav-tabs`
+ *   （Flexible / Autonomous 那一组），管不到厂商标签。
+ *   结论：外链带 `#do` 既不会切标签、也不会滚动（无对应 id，浏览器无处可跳），
+ *   是个**死片段**。厂商专属页才是真正「一跳直达目标方案」的地址。
+ */
+export const CLOUDWAYS_PROVIDER_PAGES: Record<ProviderKey, string> = {
+  digitalocean: '/en/digital-ocean-cloud-hosting.php',
+  vultr: '/en/vultr-hosting.php',
+  linode: '/en/linode-hosting.php',
+  aws: '/en/amazon-cloud-hosting.php',
+  gcp: '/en/managed-google-compute-engine.php',
+};
+
 /** 允许出现在内容里的落地页路径白名单，供 content schema 与 check-affiliate-links.mjs 校验 */
 export const CLOUDWAYS_ALLOWED_PATHS: readonly string[] = [
-  ...new Set(Object.values(CLOUDWAYS).filter((v) => typeof v === 'string' && v.startsWith('/'))),
+  ...new Set([
+    ...Object.values(CLOUDWAYS).filter((v) => typeof v === 'string' && v.startsWith('/')),
+    ...Object.values(CLOUDWAYS_PROVIDER_PAGES),
+  ]),
 ];
+
+/**
+ * 取某云厂商的专属落地页路径；传入未知厂商时回落定价页。
+ *
+ * @example
+ * providerCtaPath('digitalocean') // '/en/digital-ocean-cloud-hosting.php'
+ * providerCtaPath()               // '/en/pricing.php'
+ */
+export function providerCtaPath(provider?: string): string {
+  return (provider && CLOUDWAYS_PROVIDER_PAGES[provider as ProviderKey]) || CLOUDWAYS.pricing;
+}
 
 type AffiliateOptions = {
   /** 覆盖默认的推广 ID */

@@ -327,13 +327,20 @@ collections:
       - name: ctaPath
         label: 推广落地页路径
         widget: string
-        default: /en/
+        default: /en/pricing.php
         hint: >-
           Cloudways 站内相对路径（不要写完整链接，推广 ID 由站点统一注入）。
-          只能填这些实测可用的值：/en/（首页·注册）、/en/pricing.php（定价）、
+          「部署」按钮建议填**本厂商的专属落地页**，这样访客一跳就到对应方案：
+          DigitalOcean → /en/digital-ocean-cloud-hosting.php、
+          Vultr → /en/vultr-hosting.php、
+          Linode → /en/linode-hosting.php、
+          AWS → /en/amazon-cloud-hosting.php、
+          Google Cloud → /en/managed-google-compute-engine.php。
+          通用兜底：/en/pricing.php（定价页）、/en/（首页·注册）、
           /en/free-website-migration-service.php（迁移）、
           /en/free-wordpress-cache-plugin-breeze.php（Breeze）、/en/support.php（支持）。
-          注意 Cloudways 是 .php 文件结构，写 /en/pricing/ 这种目录形式会 404。
+          注意两点：① Cloudways 是 .php 文件结构，写 /en/pricing/ 这种目录形式会 404；
+          ② 厂商专属页不能配错厂商，构建时会直接报错。
 
       - name: featured
         label: 首页推荐

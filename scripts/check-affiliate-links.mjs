@@ -10,6 +10,12 @@
  *     ✗ /en/support/                  → 目录写法，404
  *     ✓ /en/                          → 首页，?id= 在此生效，联盟入口
  *     ✓ /en/pricing.php               → 真实定价页
+ *     ✓ /en/digital-ocean-cloud-hosting.php → DigitalOcean 专属落地页（"部署"按钮的目标）
+ *
+ *   注意「部署」按钮**不要**用 pricing.php 的 #do / #vultr 锚点：
+ *   那些是 Bootstrap 标签触发器，对应面板由 JS 动态加载，静态 HTML 里没有 id="do"，
+ *   站点按 hash 激活标签的代码也只作用于顶层 .nav-tabs —— 外链带 #do 是个死片段。
+ *   正确做法是直接用厂商专属落地页（见 consts.ts 的 CLOUDWAYS_PROVIDER_PAGES）。
  *
  *   这类错误**构建期完全不报错**：页面照常生成、链接照常渲染，
  *   只有真人点下去才会看到 404 —— 也就是「本地看着正常、上线后 404」。
@@ -54,8 +60,15 @@ async function loadConsts() {
 
 const consts = await loadConsts();
 const CLOUDWAYS = consts.CLOUDWAYS;
+const PROVIDER_PAGES = consts.CLOUDWAYS_PROVIDER_PAGES;
 const AFFILIATE_ID = consts.AFFILIATE_ID;
 const ALLOWED = new Set(consts.CLOUDWAYS_ALLOWED_PATHS);
+
+/** 所有对外落地页，键名用于报错定位：CLOUDWAYS.* 与 provider:<厂商> */
+const LANDING_PAGES = [
+  ...Object.entries(CLOUDWAYS).filter(([k]) => k !== 'origin'),
+  ...Object.entries(PROVIDER_PAGES).map(([k, v]) => [`provider:${k}`, v]),
+];
 
 /* ------------------------- 收集内容里的 ctaPath ------------------------- */
 
@@ -69,7 +82,14 @@ async function frontmatterCtaPaths(relDir) {
     const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (!fm) continue;
     const m = fm[1].match(/^ctaPath:\s*(.+?)\s*$/m);
-    if (m) out.push({ file: `${relDir}/${name}`, value: m[1].replace(/^["']|["']$/g, '') });
+    if (m) {
+      const pm = fm[1].match(/^provider:\s*(.+?)\s*$/m);
+      out.push({
+        file: `${relDir}/${name}`,
+        value: m[1].replace(/^["']|["']$/g, ''),
+        provider: pm ? pm[1].replace(/^["']|["']$/g, '') : undefined,
+      });
+    }
   }
   return out;
 }
@@ -84,29 +104,35 @@ const entries = [
 const errors = [];
 const warnings = [];
 
-for (const [key, value] of Object.entries(CLOUDWAYS)) {
-  if (key === 'origin') continue;
+for (const [key, value] of LANDING_PAGES) {
   if (typeof value !== 'string' || !value.startsWith('/')) {
-    errors.push(`CLOUDWAYS.${key} 必须是站内相对路径（以 / 开头），实际是 ${JSON.stringify(value)}`);
+    errors.push(`${key} 必须是站内相对路径（以 / 开头），实际是 ${JSON.stringify(value)}`);
     continue;
   }
   // Cloudways 用 .php 文件结构，目录写法（/en/xxx/）一律 404
   if (value !== '/en/' && value.endsWith('/')) {
     errors.push(
-      `CLOUDWAYS.${key} = "${value}" 是目录写法。Cloudways 是 .php 文件结构，` +
+      `${key} = "${value}" 是目录写法。Cloudways 是 .php 文件结构，` +
         `请改成 "${value.replace(/\/$/, '.php')}" 或回落 "/en/"`,
     );
   }
   if (value.includes('cloud-hosting-signup')) {
-    errors.push(`CLOUDWAYS.${key} = "${value}"：该路径已被 Cloudways 下线，会落到 Cloudways 的 404 页`);
+    errors.push(`${key} = "${value}"：该路径已被 Cloudways 下线，会落到 Cloudways 的 404 页`);
   }
 }
 
-for (const { file, value } of entries) {
+for (const { file, value, provider } of entries) {
   if (!ALLOWED.has(value)) {
     errors.push(
       `${file} 的 ctaPath="${value}" 不在 consts.ts 白名单里。\n` +
         `      可选值：${[...ALLOWED].join('、')}`,
+    );
+  }
+  // 厂商专属页不能配错厂商（schema 里也拦了一道，这里让 prebuild 更早暴露问题）
+  const owner = Object.entries(PROVIDER_PAGES).find(([, p]) => p === value)?.[0];
+  if (owner && provider && owner !== provider) {
+    errors.push(
+      `${file} 的 ctaPath="${value}" 是 ${owner} 的专属落地页，但 provider="${provider}" —— 会跳到别家厂商`,
     );
   }
 }
@@ -132,7 +158,7 @@ async function probe(url) {
 }
 
 if (LIVE) {
-  const paths = [...new Set(Object.entries(CLOUDWAYS).filter(([k]) => k !== 'origin').map(([, v]) => v))];
+  const paths = [...new Set(LANDING_PAGES.map(([, v]) => v))];
   console.log(`\n联网实测 ${paths.length} 个落地页（联盟 ID ${AFFILIATE_ID}）…`);
   console.log('注意：Cloudways 前置了机器人防护，非浏览器请求常被拦成 403，\n      这属于「无法判定」而不是「链接失效」，不会算作失败。\n');
 
@@ -174,7 +200,7 @@ if (LIVE) {
 
 /* ------------------------- 输出 ------------------------- */
 
-console.log(`\n检查 ${Object.keys(CLOUDWAYS).length - 1} 个落地页配置、${entries.length} 处内容 ctaPath。`);
+console.log(`\n检查 ${LANDING_PAGES.length} 个落地页配置、${entries.length} 处内容 ctaPath。`);
 
 for (const w of warnings) console.log(`⚠ ${w}`);
 
