@@ -1,7 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
-import { CATEGORY_KEYS, PROVIDERS } from './consts';
+import { CATEGORY_KEYS, CLOUDWAYS, CLOUDWAYS_ALLOWED_PATHS, PROVIDERS } from './consts';
 
 /* =========================================================
    通用片段
@@ -84,8 +84,22 @@ const productSchema = z.object({
   rating: z.number().min(0).max(5).default(4.5),
   /** 最适合谁 */
   recommendedFor: z.string().optional(),
-  /** 推广链接的相对路径，如 /en/cloud-hosting-signup.php */
-  ctaPath: z.string().default('/en/'),
+  /**
+   * 推广落地页路径。
+   *
+   * 只允许 consts.ts 里**实测可用**的 Cloudways 路径 —— 这里用 refine 硬卡住，
+   * 因为路径写错（目录写法 / 已被下线的老页面）构建期不报任何错，
+   * 只有真人点下去才看到 404，属于最难发现的一类线上事故。
+   */
+  ctaPath: z
+    .string()
+    .default(CLOUDWAYS.signup)
+    .refine((v) => CLOUDWAYS_ALLOWED_PATHS.includes(v), {
+      message:
+        `ctaPath 必须是实测可用的 Cloudways 落地页路径，可选值：` +
+        CLOUDWAYS_ALLOWED_PATHS.join('、') +
+        `（Cloudways 是 .php 文件结构，/en/pricing/ 这类目录写法会 404）`,
+    }),
   /** 首页是否推荐 */
   featured: z.boolean().default(false),
   /** 排序权重，越小越靠前 */

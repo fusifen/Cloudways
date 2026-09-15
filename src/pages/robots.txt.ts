@@ -21,8 +21,9 @@ Disallow: /admin/
 # 它们页面里带了 noindex，必须允许抓取才能让搜索引擎读到该指令；
 # 如果在这里屏蔽抓取，反而可能导致 URL 被无描述地索引。
 
-# 构建产物目录无需抓取
-Disallow: /_astro/
+# 注意：这里**故意不** Disallow /_astro/。
+# 它是站点自己的 CSS / JS 产物目录，屏蔽掉会让 Googlebot 拿不到样式表，
+# 影响它渲染页面、判断移动端适配，属于自伤。robots.txt 不是省爬虫预算的地方。
 
 # sitemap 位置
 Sitemap: ${site}/sitemap-index.xml

@@ -80,7 +80,7 @@ cons:
   - 品牌知名度低于 DigitalOcean，社区教程略少
 rating: 4.5
 recommendedFor: 面向欧美用户、追求长期稳定的生产站点
-ctaPath: /en/cloud-hosting-signup.php
+ctaPath: /en/
 featured: false
 order: 4
 priceCheckedAt: 2026-09-01

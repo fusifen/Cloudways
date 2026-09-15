@@ -76,7 +76,7 @@ cons:
   - 不支持自定义镜像与高级网络配置
 rating: 4.8
 recommendedFor: 90% 的个人站长与中小团队，闭眼选它不会错
-ctaPath: /en/cloud-hosting-signup.php
+ctaPath: /en/
 featured: true
 order: 1
 priceCheckedAt: 2026-09-01

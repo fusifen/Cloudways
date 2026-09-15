@@ -327,8 +327,13 @@ collections:
       - name: ctaPath
         label: 推广落地页路径
         widget: string
-        default: /en/cloud-hosting-signup.php
-        hint: Cloudways 站内相对路径。推广 ID 由站点统一注入，此处不要写完整链接
+        default: /en/
+        hint: >-
+          Cloudways 站内相对路径（不要写完整链接，推广 ID 由站点统一注入）。
+          只能填这些实测可用的值：/en/（首页·注册）、/en/pricing.php（定价）、
+          /en/free-website-migration-service.php（迁移）、
+          /en/free-wordpress-cache-plugin-breeze.php（Breeze）、/en/support.php（支持）。
+          注意 Cloudways 是 .php 文件结构，写 /en/pricing/ 这种目录形式会 404。
 
       - name: featured
         label: 首页推荐

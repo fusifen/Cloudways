@@ -13,7 +13,7 @@
  */
 
 import { readdir, readFile, stat } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -59,7 +59,37 @@ function extractRefs(html) {
   return refs;
 }
 
-/** 把 URL 引用解析为 dist 下的实际文件路径 */
+/**
+ * 大小写敏感地解析一个绝对路径。
+ *
+ * 为什么不能用 existsSync：Windows / macOS 的文件系统大小写**不敏感**，
+ * `/Products/vultr/` 在本地照样「存在」；而 Cloudflare Pages / Vercel / Netlify
+ * 跑在 Linux 上，大小写敏感，同一个链接线上就是 404。
+ * 这是「本地全绿、部署后 404」最常见的原因，所以这里逐段用 readdir 精确比对。
+ *
+ * @returns { path } 命中；{ mismatch, want } 只有大小写不同；null 真的不存在
+ */
+function statCaseSensitive(abs) {
+  const parts = normalize(abs).slice(distDir.length).split(/[\\/]+/).filter(Boolean);
+  let cur = distDir;
+  for (const part of parts) {
+    let entries;
+    try {
+      entries = readdirSync(cur, { withFileTypes: true });
+    } catch {
+      return null;
+    }
+    const hit = entries.find((e) => e.name === part);
+    if (!hit) {
+      const near = entries.find((e) => e.name.toLowerCase() === part.toLowerCase());
+      return near ? { mismatch: near.name, want: part } : null;
+    }
+    cur = join(cur, hit.name);
+  }
+  return { path: cur };
+}
+
+/** 把 URL 引用解析为 dist 下的实际文件路径（大小写敏感） */
 function resolveTarget(ref, fromFile) {
   // 去掉查询串与锚点
   let path = ref.split('#')[0].split('?')[0];
@@ -87,15 +117,19 @@ function resolveTarget(ref, fromFile) {
 
   // 依次尝试：原样 → 补 index.html → 补 .html
   const candidates = [abs, join(abs, 'index.html'), `${abs}.html`];
+  let mismatch = null;
   for (const c of candidates) {
-    if (existsSync(c)) return c;
+    const r = statCaseSensitive(c);
+    if (r?.path) return { file: r.path };
+    if (r?.mismatch && !mismatch) mismatch = r;
   }
-  return null;
+  return mismatch ? { mismatch } : null;
 }
 
 /* ------------------------- 执行检查 ------------------------- */
 
 const broken = new Map(); // 目标 -> 来源页面集合
+const caseIssues = new Map(); // 目标 -> { 实际名, 来源页面集合 }
 let totalRefs = 0;
 
 for (const file of htmlFiles) {
@@ -105,7 +139,13 @@ for (const file of htmlFiles) {
 
   for (const ref of extractRefs(html)) {
     totalRefs++;
-    if (!resolveTarget(ref, file)) {
+    const result = resolveTarget(ref, file);
+    if (result?.file) continue;
+
+    if (result?.mismatch) {
+      if (!caseIssues.has(ref)) caseIssues.set(ref, { real: result.mismatch, pages: new Set() });
+      caseIssues.get(ref).pages.add(pagePath);
+    } else {
       if (!broken.has(ref)) broken.set(ref, new Set());
       broken.get(ref).add(pagePath);
     }
@@ -116,16 +156,27 @@ for (const file of htmlFiles) {
 
 console.log(`扫描 ${htmlFiles.length} 个页面，检查 ${totalRefs} 处站内引用。\n`);
 
+if (caseIssues.size > 0) {
+  console.log(`✗ 发现 ${caseIssues.size} 处**大小写不匹配**（本地能开、部署到 Linux 托管必然 404）：\n`);
+  for (const [ref, { real, pages }] of caseIssues) {
+    console.log(`  ${ref}`);
+    console.log(`    磁盘上的真实名字是「${real.want}」，但目录里是「${real.mismatch}」`);
+    console.log(`    出现在：${[...pages].slice(0, 4).join('、')}${pages.size > 4 ? ` 等 ${pages.size} 个页面` : ''}`);
+    console.log('');
+  }
+}
+
 if (broken.size === 0) {
-  console.log('✓ 未发现死链。');
+  console.log(caseIssues.size === 0 ? '✓ 未发现死链。' : '');
 } else {
   console.log(`✗ 发现 ${broken.size} 个失效目标：\n`);
   for (const [ref, pages] of broken) {
     console.log(`  ${ref}`);
     console.log(`    出现在：${[...pages].slice(0, 4).join('、')}${pages.size > 4 ? ` 等 ${pages.size} 个页面` : ''}`);
   }
-  process.exitCode = 1;
 }
+
+if (broken.size > 0 || caseIssues.size > 0) process.exitCode = 1;
 
 /* ------------------------- 附：页面清单概览 ------------------------- */
 const stats = await stat(distDir);

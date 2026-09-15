@@ -36,18 +36,46 @@ const EXTRA_PARAMS: Record<string, string> = {
   utm_medium: 'affiliate',
 };
 
+/**
+ * Cloudways 官方落地页路径（**唯一可信来源**）
+ *
+ * ⚠️ 这里每一个值都是**实测可用**的，改动前请先跑 `npm run check:affiliate -- --live`。
+ *
+ * 两个反复踩过的坑：
+ *  1. Cloudways 是 **.php 文件**结构，不是目录结构。
+ *     `/en/pricing/`、`/en/support/` 这类「目录写法」全部 404，
+ *     正确写法是 `/en/pricing.php`、`/en/support.php`。
+ *  2. `/en/cloud-hosting-signup.php` 这条老注册路径**已被 Cloudways 下线**，
+ *     访问会落到 Cloudways 自己的 404 页（"slipped through a time portal"）。
+ *     现在注册/试用统一落地首页 `/en/`：`?id=` 参数在该页生效并写入联盟 cookie，
+ *     用户再点页面里的 "Start Free" 完成注册，归因不丢。
+ *
+ * 因此：**`/en/` 是唯一保证可用的联盟入口**，其它深链只在确认存在时才使用。
+ */
 export const CLOUDWAYS = {
   origin: 'https://www.cloudways.com',
-  /** 首页（注册入口） */
+  /** 首页 —— 联盟追踪入口，`?id=` 在此页生效 */
   home: '/en/',
-  signup: '/en/cloud-hosting-signup.php',
-  pricing: '/en/pricing/',
-  freeTrial: '/en/free-trial/',
-  migration: '/en/free-website-migration/',
-  breeze: '/en/breeze-wordpress-cache-plugin/',
-  coupon: '/en/coupon/',
-  support: '/en/support/',
+  /** 注册 / 免费试用入口（落地首页，见上方说明） */
+  signup: '/en/',
+  /** 定价页 */
+  pricing: '/en/pricing.php',
+  /** 免费试用（与注册同页） */
+  freeTrial: '/en/',
+  /** 免费网站迁移服务 */
+  migration: '/en/free-website-migration-service.php',
+  /** Breeze WordPress 缓存插件 */
+  breeze: '/en/free-wordpress-cache-plugin-breeze.php',
+  /** Cloudways 已无独立优惠页，回落首页 */
+  coupon: '/en/',
+  /** 支持中心 */
+  support: '/en/support.php',
 } as const;
+
+/** 允许出现在内容里的落地页路径白名单，供 content schema 与 check-affiliate-links.mjs 校验 */
+export const CLOUDWAYS_ALLOWED_PATHS: readonly string[] = [
+  ...new Set(Object.values(CLOUDWAYS).filter((v) => typeof v === 'string' && v.startsWith('/'))),
+];
 
 type AffiliateOptions = {
   /** 覆盖默认的推广 ID */

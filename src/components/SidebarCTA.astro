@@ -2,7 +2,7 @@
 /**
  * 侧边栏粘性转化卡片（桌面端）
  */
-import { TRUST_POINTS } from '../consts';
+import { CLOUDWAYS, TRUST_POINTS } from '../consts';
 import AffiliateButton from './AffiliateButton.astro';
 import Icon from './Icon.astro';
 
@@ -17,7 +17,9 @@ interface Props {
 const {
   title = '推荐方案',
   description = 'DigitalOcean 2GB 档：28 美元/月，1 vCPU / 2GB 内存 / 50GB SSD，适合中小企业站与 WooCommerce 起步。',
-  path = '/en/cloud-hosting-signup.php',
+  // 必须走 CLOUDWAYS 常量：这里以前硬编码过已被 Cloudways 下线的老路径，
+  // 导致侧边栏按钮单独 404。落地页路径只允许有一处来源。
+  path = CLOUDWAYS.signup,
   label = '免费试用 Cloudways',
   class: className = '',
 } = Astro.props;

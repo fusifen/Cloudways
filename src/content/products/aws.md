@@ -80,7 +80,7 @@ cons:
   - 计费维度多，不熟悉的人容易看花眼
 rating: 4.4
 recommendedFor: 有合规要求、或已深度使用 AWS 生态的团队
-ctaPath: /en/cloud-hosting-signup.php
+ctaPath: /en/
 featured: false
 order: 2
 priceCheckedAt: 2026-09-01

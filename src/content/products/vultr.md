@@ -112,7 +112,7 @@ cons:
   - 高频档价格比标准档高约 28%
 rating: 4.6
 recommendedFor: 需要全球就近部署，或动态站点想提升单核性能的团队
-ctaPath: /en/cloud-hosting-signup.php
+ctaPath: /en/
 featured: true
 order: 5
 priceCheckedAt: 2026-09-01

@@ -1,5 +1,9 @@
 # build output
 dist/
+# 备份/改名后的旧产物。不忽略它们会让 tsconfig 的 "**/*" 把压缩过的
+# bundle 当成源码解析，astro check 直接 OOM。
+dist-*/
+dist.*/
 
 # generated types
 .astro/
@@ -25,3 +29,7 @@ pnpm-debug.log*
 
 # 本地验证截图（用于开发期核对渲染效果，不进仓库）
 .verify/
+
+# AI 助手的本地工作区（项目记忆、会话数据）。属于本机状态而非站点源码，
+# 会随每次对话变动，入库只会制造噪音。文件夹本身保留在磁盘上。
+.workbuddy-ai/

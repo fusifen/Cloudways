@@ -81,7 +81,7 @@ cons:
   - 对纯国内访客而言，优势不如新加坡节点直观
 rating: 4.5
 recommendedFor: 跨境业务、面向多地区用户的实时应用
-ctaPath: /en/cloud-hosting-signup.php
+ctaPath: /en/
 featured: true
 order: 3
 priceCheckedAt: 2026-09-01

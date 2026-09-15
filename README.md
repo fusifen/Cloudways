@@ -62,11 +62,32 @@ affiliateUrl(CLOUDWAYS.signup, {
 输出的链接形如：
 
 ```
-https://www.cloudways.com/en/cloud-hosting-signup.php?id=<你的ID>&utm_source=cloudways-guide&utm_medium=affiliate&provider=vultr
+https://www.cloudways.com/en/?id=<你的ID>&utm_source=cloudways-guide&utm_medium=affiliate&provider=vultr
 ```
 
 **换 ID 时只需改 `.env` 里的一个值**，全站所有按钮、表格、侧边栏与 CTA 卡片同步生效，
 不需要逐篇修改 Markdown。
+
+> ### ⚠️ 落地页路径只能有一处来源
+>
+> Cloudways 的站点是 **`.php` 文件**结构，且会不定期下线老页面。历史上踩过两次：
+>
+> | 写法 | 结果 |
+> | :--- | :--- |
+> | `/en/cloud-hosting-signup.php` | 已被 Cloudways 下线 → 落到它的 404 页 |
+> | `/en/pricing/`、`/en/support/` | 目录写法 → 404 |
+> | `/en/` | ✅ 首页，`?id=` 在此生效并写入联盟 cookie |
+> | `/en/pricing.php`、`/en/support.php` | ✅ 真实页面 |
+>
+> 这类错误**构建期完全不报错**，页面照常生成、链接照常渲染，只有真人点下去才 404。
+> 因此做了三道防线：
+>
+> 1. 路径只在 `src/consts.ts` 的 `CLOUDWAYS` 里定义（**不要在组件里硬编码**）；
+> 2. `ctaPath` 的 Zod schema 用 `refine` 卡住白名单，写错直接构建失败；
+> 3. `npm run check:affiliate` 静态校验 + `npm run check:affiliate -- --live` 联网实测，
+>    静态层已挂到 `prebuild`。
+>
+> 新增落地页时：先确认页面真实存在，再写进 `CLOUDWAYS`，然后跑一次 `--live`。
 
 组件层面统一使用 `AffiliateButton.astro`，它会自动附加
 `rel="sponsored nofollow noopener"`，符合搜索引擎对商业链接的规范要求。
