@@ -1,0 +1,178 @@
+---
+import type { MarkdownHeading } from 'astro';
+import { CATEGORIES, type CategoryKey } from '../consts';
+import { formatDate, readingTimeOf, type Article } from '../lib/articles';
+import { articleSchema, breadcrumbSchema, faqSchema } from '../lib/schema';
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+import SidebarCTA from '../components/SidebarCTA.astro';
+import InlineCTA from '../components/InlineCTA.astro';
+import FaqSection from '../components/FaqSection.astro';
+import RelatedArticles from '../components/RelatedArticles.astro';
+import AffiliateDisclosure from '../components/AffiliateDisclosure.astro';
+import Icon from '../components/Icon.astro';
+
+interface Props {
+  article: Article;
+  headings: MarkdownHeading[];
+  related?: Article[];
+}
+
+const { article, headings, related = [] } = Astro.props;
+const d = article.data;
+const cat = CATEGORIES[d.category as CategoryKey];
+const minutes = readingTimeOf(article);
+const path = `/articles/${article.id}/`;
+
+const crumbs = [
+  { label: '首页', href: '/' },
+  { label: '文章教程', href: '/articles/' },
+  { label: cat?.label ?? d.category, href: `/categories/${d.category}/` },
+  { label: d.title },
+];
+
+const schemas = [
+  articleSchema(article, path),
+  breadcrumbSchema(crumbs),
+  faqSchema(d.faqs),
+].filter(Boolean);
+---
+
+<BaseLayout
+  title={d.seo?.title || d.title}
+  description={d.seo?.description || d.description}
+  path={path}
+  ogType="article"
+  ogImage={d.heroImage || d.seo?.ogImage}
+  keywords={[...(d.seo?.keywords ?? []), ...d.tags]}
+  schemas={schemas}
+  publishedTime={d.pubDate.toISOString()}
+  modifiedTime={(d.updatedDate ?? d.pubDate).toISOString()}
+  width="wide"
+>
+  <Breadcrumbs items={crumbs} />
+
+  <div class="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <!-- 正文列 -->
+    <div class="min-w-0">
+      <header>
+        <div class="flex flex-wrap items-center gap-2">
+          <a
+            href={`/categories/${d.category}/`}
+            class="chip transition-opacity hover:opacity-80"
+            style={`background:${cat?.color}14;color:${cat?.color}`}
+          >
+            {cat?.label ?? d.category}
+          </a>
+          {
+            d.featured && (
+              <span class="chip bg-amber-100 text-amber-700">
+                <Icon name="sparkles" size={12} />
+                精选
+              </span>
+            )
+          }
+        </div>
+
+        <h1 class="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-[2.1rem]">
+          {d.title}
+        </h1>
+
+        <p class="mt-4 text-[17px] leading-relaxed text-ink-500">{d.description}</p>
+
+        <div
+          class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-line py-3.5 text-[13px] text-ink-500"
+        >
+          <span class="inline-flex items-center gap-1.5">
+            <Icon name="user" size={14} />
+            {d.author}
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <Icon name="calendar" size={14} />
+            <time datetime={d.pubDate.toISOString()}>{formatDate(d.pubDate)}</time>
+          </span>
+          {
+            d.updatedDate && (
+              <span class="inline-flex items-center gap-1.5">
+                <Icon name="clock" size={14} />
+                更新于 {formatDate(d.updatedDate)}
+              </span>
+            )
+          }
+          <span class="inline-flex items-center gap-1.5">
+            <Icon name="bookOpen" size={14} />
+            约 {minutes} 分钟读完
+          </span>
+        </div>
+      </header>
+
+      {
+        d.affiliateNotice && <AffiliateDisclosure class="mt-6" />
+      }
+
+      {
+        d.heroImage && (
+          <figure class="mt-7">
+            <img
+              src={d.heroImage}
+              alt={d.heroImageAlt || d.title}
+              width="1200"
+              height="630"
+              class="w-full rounded-2xl border border-line"
+              loading="eager"
+              decoding="async"
+            />
+          </figure>
+        )
+      }
+
+      <!-- 移动端目录 -->
+      {
+        d.toc && (
+          <div class="mt-8 rounded-2xl border border-line bg-white p-5 lg:hidden">
+            <TableOfContents headings={headings} />
+          </div>
+        )
+      }
+
+      <div class="prose-custom mt-8">
+        <slot />
+      </div>
+
+      <InlineCTA class="mt-12" />
+
+      <FaqSection faqs={d.faqs} class="mt-2" />
+
+      <!-- 标签 -->
+      {
+        d.tags.length > 0 && (
+          <div class="mt-10 flex flex-wrap items-center gap-2 border-t border-line pt-6">
+            <span class="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-500">
+              <Icon name="tag" size={14} />
+              标签
+            </span>
+            {d.tags.map((tag) => (
+              <a
+                href={`/tags/${encodeURIComponent(tag)}/`}
+                class="chip bg-surface-2 text-ink-600 transition-colors hover:bg-brand-50 hover:text-brand-700"
+              >
+                {tag}
+              </a>
+            ))}
+          </div>
+        )
+      }
+
+      <RelatedArticles articles={related} />
+    </div>
+
+    <!-- 侧边栏 -->
+    <aside class="hidden lg:block">
+      <div class="sticky top-24 space-y-5">
+        {d.toc && <TableOfContents headings={headings} />}
+        <SidebarCTA />
+      </div>
+    </aside>
+  </div>
+</BaseLayout>

@@ -1,0 +1,221 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import ProductComparisonTable from '../components/ProductComparisonTable.astro';
+import AffiliateButton from '../components/AffiliateButton.astro';
+import Icon from '../components/Icon.astro';
+import { formatPrice, getSortedProducts } from '../lib/articles';
+import { breadcrumbSchema } from '../lib/schema';
+
+const products = await getSortedProducts();
+const crumbs = [{ label: '首页', href: '/' }, { label: '价格一览' }];
+
+const allPlans = products.flatMap((p) =>
+  p.data.plans.map((plan) => ({ provider: p, plan })),
+);
+const totalPlans = allPlans.length;
+
+// 同内存档位中最便宜的方案
+const ramTiers = [...new Set(allPlans.map((x) => x.plan.ram))].sort((a, b) => a - b);
+const bestByRam = ramTiers.map((ram) => {
+  const candidates = allPlans.filter((x) => x.plan.ram === ram);
+  const best = candidates.sort((a, b) => a.plan.monthlyPrice - b.plan.monthlyPrice)[0];
+  const most = candidates.sort((a, b) => b.plan.monthlyPrice - a.plan.monthlyPrice)[0];
+  return {
+    ram,
+    best,
+    most,
+    spread: most.plan.monthlyPrice - best.plan.monthlyPrice,
+    count: candidates.length,
+  };
+});
+
+const hiddenCosts = [
+  {
+    item: '额外存储扩容',
+    price: '约 $2–5 / 10GB / 月',
+    note: '只能增加，无法缩减，会持续计费',
+  },
+  { item: 'Staging 环境', price: '按月单独计费', note: '用完务必手动删除' },
+  { item: '高频备份（1 小时一次）', price: '按月加购', note: '默认备份频率免费' },
+  { item: '独立 IP', price: '按月加购', note: '多数场景非必需' },
+  { item: 'AWS / GCP 超流量', price: '按 GB 计费', note: '与 DO/Vultr 的限速策略不同' },
+];
+---
+
+<BaseLayout
+  title="Cloudways 价格一览"
+  description={`Cloudways 全部 ${totalPlans} 个配置档位价格汇总，按内存档位找出最便宜方案，并列出容易被忽略的隐性成本。`}
+  path="/pricing/"
+  keywords={['Cloudways 价格', 'Cloudways 多少钱', 'Cloudways 价格表', '托管云主机价格']}
+  schemas={[breadcrumbSchema(crumbs)]}
+  width="wide"
+>
+  <Breadcrumbs items={crumbs} />
+
+  <header class="mt-6 max-w-3xl">
+    <span class="chip border border-brand-200 bg-brand-50 text-brand-700">
+      <Icon name="dollar" size={13} />
+      {totalPlans} 个档位 · 价格核对日期 2026-09-01
+    </span>
+    <h1 class="mt-4 text-3xl font-bold tracking-tight sm:text-[2.4rem]">价格一览</h1>
+    <p class="mt-4 text-[17px] leading-relaxed text-ink-500">
+      Cloudways 按小时计费、月底结算。下面列出全部档位的标价，
+      并按内存档位标出<strong>最便宜</strong>与<strong>最贵</strong>的选项，帮你快速定位。
+    </p>
+  </header>
+
+  <!-- 同档位最便宜 -->
+  <section class="mt-10" aria-labelledby="best-heading">
+    <h2 id="best-heading" class="text-2xl font-bold tracking-tight">同内存档位谁最便宜</h2>
+    <p class="mt-2 text-[15px] text-ink-500">
+      相同内存下不同厂商的价差可以很大，这一栏是决策的关键。
+    </p>
+
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        bestByRam.map((row) => (
+          <div class="card p-5">
+            <div class="flex items-baseline justify-between">
+              <h3 class="text-[15px] font-bold text-ink-900">{row.ram} GB 内存</h3>
+              <span class="text-[12px] text-ink-400">{row.count} 个选项</span>
+            </div>
+
+            <div class="mt-4 rounded-xl bg-brand-50 p-3.5">
+              <p class="text-[12px] font-medium text-brand-700">最便宜</p>
+              <div class="mt-1 flex items-baseline justify-between">
+                <a
+                  href={`/products/${row.best.provider.id}/`}
+                  class="text-[14px] font-semibold text-ink-900 hover:text-brand-700"
+                >
+                  {row.best.provider.data.name}
+                </a>
+                <span class="text-lg font-bold tabular-nums text-brand-700">
+                  {formatPrice(row.best.plan.monthlyPrice, 0)}
+                </span>
+              </div>
+              <p class="mt-1 text-[11.5px] text-ink-500">
+                {row.best.plan.vcpu} vCPU / {row.best.plan.storage}GB / {row.best.plan.bandwidth}TB
+              </p>
+            </div>
+
+            <div class="mt-3 rounded-xl bg-surface p-3.5">
+              <p class="text-[12px] font-medium text-ink-500">最贵</p>
+              <div class="mt-1 flex items-baseline justify-between">
+                <a
+                  href={`/products/${row.most.provider.id}/`}
+                  class="text-[14px] font-medium text-ink-700 hover:text-brand-700"
+                >
+                  {row.most.provider.data.name}
+                </a>
+                <span class="text-lg font-bold tabular-nums text-ink-500">
+                  {formatPrice(row.most.plan.monthlyPrice, 0)}
+                </span>
+              </div>
+            </div>
+
+            <p class="mt-3 text-[12.5px] text-ink-400">
+              价差
+              <strong class="text-ink-700">{formatPrice(row.spread, 0)}</strong>
+              /月
+            </p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- 全量表 -->
+  <section class="mt-14" aria-labelledby="all-heading">
+    <h2 id="all-heading" class="text-2xl font-bold tracking-tight">全部档位价格</h2>
+    <p class="mt-2 text-[15px] text-ink-500">支持按内存筛选与按月费排序。</p>
+    <ProductComparisonTable products={products} class="mt-6" />
+  </section>
+
+  <!-- 隐性成本 -->
+  <section class="mt-14" aria-labelledby="hidden-heading">
+    <h2 id="hidden-heading" class="text-2xl font-bold tracking-tight">容易被忽略的隐性成本</h2>
+    <p class="mt-2 text-[15px] text-ink-500">
+      账单超预期通常不是主服务器造成的，而是这些附加项。
+    </p>
+
+    <div class="card mt-6 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[620px] border-collapse text-sm">
+          <thead>
+            <tr class="border-b border-line bg-surface text-left text-[13px] text-ink-500">
+              <th scope="col" class="px-4 py-3 font-semibold">项目</th>
+              <th scope="col" class="px-4 py-3 font-semibold">计费方式</th>
+              <th scope="col" class="px-4 py-3 font-semibold">注意事项</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              hiddenCosts.map((row) => (
+                <tr class="border-b border-line/70 last:border-0 hover:bg-surface">
+                  <td class="px-4 py-3.5 font-medium text-ink-800">{row.item}</td>
+                  <td class="px-4 py-3.5 text-ink-600">{row.price}</td>
+                  <td class="px-4 py-3.5 text-ink-500">{row.note}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 省钱建议 -->
+  <section class="mt-14" aria-labelledby="save-heading">
+    <h2 id="save-heading" class="text-2xl font-bold tracking-tight">四条省钱建议</h2>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2">
+      {
+        [
+          {
+            icon: 'clock',
+            title: '善用按小时计费',
+            desc: '做测试、跑压测、临时部署 demo，用完立刻删。成本可能只有几毛钱。',
+          },
+          {
+            icon: 'cpu',
+            title: '选对厂商比选大配置更省',
+            desc: 'DigitalOcean 4GB（$56）通常比 AWS 2GB（$38.86）更能扛真实流量。',
+          },
+          {
+            icon: 'filter',
+            title: '先开缓存再考虑升级',
+            desc: '很多「内存不够」其实只是没开 Breeze。开启后观察一周再决定加什么。',
+          },
+          {
+            icon: 'minus',
+            title: '每月清理闲置资源',
+            desc: '测试服务器、Staging 环境、存储扩容是最常见的账单泄漏点。',
+          },
+        ].map((item) => (
+          <div class="card flex gap-4 p-5">
+            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
+              <Icon name={item.icon} size={18} />
+            </span>
+            <div>
+              <h3 class="text-[15px] font-bold text-ink-900">{item.title}</h3>
+              <p class="mt-1.5 text-[13.5px] leading-relaxed text-ink-500">{item.desc}</p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="mt-14 rounded-2xl border border-brand-200 bg-brand-50/60 p-6 sm:p-8">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-ink-900">从最低档起步，按需升级</h2>
+        <p class="mt-2 max-w-xl text-[14.5px] leading-relaxed text-ink-600">
+          Cloudways 支持在线垂直扩容，不需要重装系统。所以起步买小是安全的 ——
+          先用 14 美元/月的档位跑起来，资源不够再升级。
+        </p>
+      </div>
+      <AffiliateButton label="从 14 美元/月起" variant="cta" size="lg" class="shrink-0" />
+    </div>
+  </section>
+</BaseLayout>

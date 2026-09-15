@@ -1,0 +1,376 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import PlanTable from '../../components/PlanTable.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import AffiliateButton from '../../components/AffiliateButton.astro';
+import SidebarCTA from '../../components/SidebarCTA.astro';
+import InlineCTA from '../../components/InlineCTA.astro';
+import Rating from '../../components/Rating.astro';
+import Icon from '../../components/Icon.astro';
+import { affiliateUrl, PROVIDERS, type ProviderKey } from '../../consts';
+import { formatDate, formatPrice, getPublishedArticles, getSortedProducts } from '../../lib/articles';
+import { breadcrumbSchema, productSchema } from '../../lib/schema';
+
+export async function getStaticPaths() {
+  const products = await getSortedProducts();
+  return products.map((product) => ({
+    params: { id: product.id },
+    props: { product, products },
+  }));
+}
+
+const { product, products } = Astro.props;
+const d = product.data;
+const meta = PROVIDERS[d.provider as ProviderKey];
+const { Content, headings } = await render(product);
+
+const allArticles = await getPublishedArticles();
+const relatedArticles = allArticles
+  .filter((a) => a.data.relatedProducts.includes(product.id))
+  .slice(0, 3);
+
+const others = products.filter((p) => p.id !== product.id).slice(0, 3);
+
+const cheapest = [...d.plans].sort((a, b) => a.monthlyPrice - b.monthlyPrice)[0];
+const path = `/products/${product.id}/`;
+const ctaLink = affiliateUrl(d.ctaPath, { params: { provider: d.provider } });
+
+const crumbs = [
+  { label: '首页', href: '/' },
+  { label: '产品与价格', href: '/products/' },
+  { label: d.name },
+];
+
+const tocItems = headings.filter((h) => h.depth === 2);
+---
+
+<BaseLayout
+  title={d.seo?.title || `Cloudways ${d.name} 价格与配置`}
+  description={d.seo?.description || d.tagline}
+  path={path}
+  ogType="product"
+  keywords={[...(d.seo?.keywords ?? []), d.name, 'Cloudways']}
+  schemas={[breadcrumbSchema(crumbs), productSchema(product, path, ctaLink)]}
+  width="wide"
+>
+  <Breadcrumbs items={crumbs} />
+
+  <div class="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div class="min-w-0">
+      <!-- 厂商头部 -->
+      <header class="card overflow-hidden">
+        <div class="h-1.5 w-full" style={`background:${d.brandColor}`}></div>
+        <div class="p-6">
+          <div class="flex flex-wrap items-start gap-5">
+            <span
+              class="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-xl font-bold text-white"
+              style={`background:${d.brandColor}`}
+              aria-hidden="true"
+            >
+              {d.name.slice(0, 2).toUpperCase()}
+            </span>
+
+            <div class="min-w-0 flex-1">
+              <h1 class="text-2xl font-bold tracking-tight sm:text-[1.75rem]">
+                Cloudways {d.name}
+              </h1>
+              <p class="mt-2 text-[15px] leading-relaxed text-ink-500">{d.tagline}</p>
+              <div class="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2">
+                <Rating value={d.rating} />
+                <span class="inline-flex items-center gap-1.5 text-[13px] text-ink-500">
+                  <Icon name="mapPin" size={14} />
+                  {d.datacenters.length} 个机房
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-[13px] text-ink-500">
+                  <Icon name="cpu" size={14} />
+                  {d.plans.length} 个档位
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 价格与 CTA -->
+          <div
+            class="mt-6 flex flex-col gap-4 rounded-xl border border-line bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <p class="text-[13px] text-ink-400">起步价（{cheapest.name}）</p>
+              <p class="mt-1 flex items-baseline gap-1.5">
+                <span class="text-3xl font-bold tracking-tight text-ink-900">
+                  {formatPrice(cheapest.monthlyPrice, 0)}
+                </span>
+                <span class="text-sm text-ink-400">/月</span>
+                <span class="ml-2 text-[12px] text-ink-400">
+                  {formatPrice(cheapest.hourlyPrice, 3)}/小时
+                </span>
+              </p>
+            </div>
+            <AffiliateButton
+              path={d.ctaPath}
+              label={`部署 ${d.name}`}
+              variant="cta"
+              size="lg"
+              params={{ provider: d.provider }}
+              class="shrink-0"
+            />
+          </div>
+
+          {
+            meta && (
+              <p class="mt-4 text-[13.5px] leading-relaxed text-ink-500">
+                <Icon name="info" size={14} class="mr-1 inline align-[-2px] text-ink-400" />
+                {meta.blurb}
+              </p>
+            )
+          }
+        </div>
+      </header>
+
+      <!-- 档位价格表 -->
+      <section class="mt-10" aria-labelledby="plans-heading">
+        <h2 id="plans-heading" class="text-xl font-bold tracking-tight">
+          配置档位与价格
+        </h2>
+        <p class="mt-2 text-[14.5px] text-ink-500">
+          全部价格为 Cloudways 官方标价，按小时计费、月底结算。
+          {d.priceCheckedAt && `价格核对日期：${formatDate(d.priceCheckedAt)}。`}
+        </p>
+        <div class="mt-5">
+          <PlanTable product={product} />
+        </div>
+      </section>
+
+      <!-- 适用场景 + 优劣 -->
+      <section class="mt-10 grid gap-5 sm:grid-cols-2" aria-label="适用场景与优劣分析">
+        <div class="card p-5">
+          <h2 class="flex items-center gap-2 text-[16px] font-bold">
+            <span class="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
+              <Icon name="sparkles" size={15} />
+            </span>
+            适用场景
+          </h2>
+          <ul class="mt-4 space-y-2.5">
+            {
+              d.scenarios.map((item) => (
+                <li class="flex items-start gap-2 text-[14px] text-ink-600">
+                  <Icon name="check" size={15} class="mt-0.5 shrink-0 text-accent-600" />
+                  {item}
+                </li>
+              ))
+            }
+          </ul>
+          {
+            d.recommendedFor && (
+              <p class="mt-4 rounded-lg bg-brand-50 px-3.5 py-2.5 text-[13px] leading-relaxed text-brand-800">
+                <strong>推荐给：</strong>
+                {d.recommendedFor}
+              </p>
+            )
+          }
+        </div>
+
+        <div class="card p-5">
+          <h2 class="flex items-center gap-2 text-[16px] font-bold">
+            <span class="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
+              <Icon name="shieldCheck" size={15} />
+            </span>
+            Cloudways 托管能力
+          </h2>
+          <ul class="mt-4 space-y-2.5">
+            {
+              d.highlights.map((item) => (
+                <li class="flex items-start gap-2 text-[14px] text-ink-600">
+                  <Icon name="bolt" size={15} class="mt-0.5 shrink-0 text-brand-500" />
+                  {item}
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </section>
+
+      <!-- 优点 / 缺点 -->
+      <section class="mt-5 grid gap-5 sm:grid-cols-2" aria-label="优缺点">
+        <div class="card border-emerald-200 p-5">
+          <h2 class="flex items-center gap-2 text-[16px] font-bold text-emerald-800">
+            <Icon name="check" size={17} />
+            优点
+          </h2>
+          <ul class="mt-3.5 space-y-2">
+            {
+              d.pros.map((item) => (
+                <li class="flex items-start gap-2 text-[14px] text-ink-600">
+                  <Icon name="plus" size={14} class="mt-1 shrink-0 text-emerald-600" />
+                  {item}
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        <div class="card border-rose-200 p-5">
+          <h2 class="flex items-center gap-2 text-[16px] font-bold text-rose-800">
+            <Icon name="minus" size={17} />
+            需要注意
+          </h2>
+          <ul class="mt-3.5 space-y-2">
+            {
+              d.cons.map((item) => (
+                <li class="flex items-start gap-2 text-[14px] text-ink-600">
+                  <Icon name="minus" size={14} class="mt-1 shrink-0 text-rose-500" />
+                  {item}
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </section>
+
+      <!-- 机房列表 -->
+      <section class="mt-10" aria-labelledby="dc-heading">
+        <h2 id="dc-heading" class="text-xl font-bold tracking-tight">
+          可用机房（{d.datacenters.length} 个）
+        </h2>
+        <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {
+            d.datacenters.map((dc) => (
+              <div class="flex items-center gap-3 rounded-xl border border-line bg-white px-4 py-3">
+                <Icon name="mapPin" size={16} class="shrink-0 text-brand-500" />
+                <div class="min-w-0">
+                  <p class="truncate text-[14px] font-semibold text-ink-800">
+                    {dc.city}
+                    <span class="ml-1 font-normal text-ink-400">{dc.country}</span>
+                  </p>
+                  {dc.code && (
+                    <p class="font-mono text-[11.5px] text-ink-400">{dc.code}</p>
+                  )}
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <!-- 详细介绍（Markdown 正文） -->
+      <section class="mt-10">
+        <div class="prose-custom">
+          <Content />
+        </div>
+      </section>
+
+      <InlineCTA
+        class="mt-12"
+        title={`试试 Cloudways ${d.name}`}
+        description={`${cheapest.name} 起步 ${formatPrice(cheapest.monthlyPrice, 0)} 美元/月，按小时计费，无需信用卡即可免费试用。`}
+        label={`免费试用 ${d.name}`}
+      />
+
+      <!-- 相关文章 -->
+      {
+        relatedArticles.length > 0 && (
+          <section class="mt-14" aria-labelledby="rel-heading">
+            <h2 id="rel-heading" class="flex items-center gap-2.5 text-xl font-bold">
+              <span class="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600">
+                <Icon name="bookOpen" size={17} />
+              </span>
+              相关文章
+            </h2>
+            <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {relatedArticles.map((article) => (
+                <ArticleCard article={article} />
+              ))}
+            </div>
+          </section>
+        )
+      }
+    </div>
+
+    <!-- 侧边栏 -->
+    <aside class="hidden lg:block">
+      <div class="sticky top-24 space-y-5">
+        {
+          tocItems.length > 2 && (
+            <nav aria-labelledby="page-toc" class="text-sm">
+              <h2
+                id="page-toc"
+                class="flex items-center gap-2 text-[13px] font-bold uppercase tracking-wide text-ink-500"
+              >
+                <Icon name="bookOpen" size={15} class="text-brand-600" />
+                页面导航
+              </h2>
+              <ul class="mt-3.5 space-y-1 border-l border-line">
+                {tocItems.map((h) => (
+                  <li>
+                    <a
+                      href={`#${h.slug}`}
+                      class="-ml-px block border-l-2 border-transparent py-1.5 pl-3.5 text-[13px] text-ink-500 transition-colors hover:border-brand-300 hover:text-brand-700"
+                    >
+                      {h.text}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )
+        }
+
+        <SidebarCTA
+          title={`${d.name} 方案`}
+          description={`${cheapest.name}：${cheapest.vcpu} vCPU / ${cheapest.ram}GB 内存 / ${cheapest.storage}GB 存储，${formatPrice(cheapest.monthlyPrice, 0)} 美元/月起。`}
+          path={d.ctaPath}
+          label={`部署 ${d.name}`}
+        />
+
+        <div class="card p-5">
+          <h3 class="text-[14px] font-bold text-ink-900">其他云厂商</h3>
+          <ul class="mt-3.5 space-y-2">
+            {
+              others.map((other) => (
+                <li>
+                  <a
+                    href={`/products/${other.id}/`}
+                    class="flex items-center justify-between rounded-lg px-2.5 py-2 text-[13.5px] text-ink-600 transition-colors hover:bg-surface-2 hover:text-brand-700"
+                  >
+                    <span class="flex items-center gap-2">
+                      <span
+                        class="h-2 w-2 rounded-full"
+                        style={`background:${other.data.brandColor}`}
+                        aria-hidden="true"
+                      />
+                      {other.data.name}
+                    </span>
+                    <span class="text-[12px] text-ink-400">
+                      {formatPrice(
+                        [...other.data.plans].sort((a, b) => a.monthlyPrice - b.monthlyPrice)[0]
+                          .monthlyPrice,
+                        0,
+                      )}
+                    </span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+          <a
+            href="/compare/"
+            class="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-brand-600 hover:text-brand-700"
+          >
+            全部对比
+            <Icon name="arrowRight" size={14} />
+          </a>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- 推荐其他厂商 -->
+  <section class="mt-16" aria-labelledby="others-heading">
+    <h2 id="others-heading" class="text-xl font-bold tracking-tight">也可以考虑</h2>
+    <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {others.map((other) => <ProductCard product={other} showPlans={false} />)}
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,92 @@
+---
+import '../styles/global.css';
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import MobileCTABar from '../components/MobileCTABar.astro';
+import { SITE } from '../consts';
+import { organizationSchema, websiteSchema } from '../lib/schema';
+
+interface Props {
+  title?: string;
+  description?: string;
+  path?: string;
+  ogImage?: string;
+  ogType?: 'website' | 'article' | 'product';
+  keywords?: string[];
+  noindex?: boolean;
+  schemas?: unknown[];
+  publishedTime?: string;
+  modifiedTime?: string;
+  /** 是否显示移动端底部转化条 */
+  showMobileCta?: boolean;
+  /** 主内容区宽度：wide 用于对比表等宽内容 */
+  width?: 'default' | 'wide' | 'narrow';
+}
+
+const {
+  title,
+  description,
+  path = Astro.url.pathname,
+  ogImage,
+  ogType = 'website',
+  keywords = [],
+  noindex = false,
+  schemas = [],
+  publishedTime,
+  modifiedTime,
+  showMobileCta = true,
+  width = 'default',
+} = Astro.props;
+
+const widthClass =
+  width === 'wide' ? 'max-w-[1280px]' : width === 'narrow' ? 'max-w-3xl' : 'max-w-[1200px]';
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <BaseHead
+      title={title}
+      description={description}
+      path={path}
+      ogImage={ogImage}
+      ogType={ogType}
+      keywords={keywords}
+      noindex={noindex}
+      schemas={[organizationSchema(), websiteSchema(), ...schemas]}
+      publishedTime={publishedTime}
+      modifiedTime={modifiedTime}
+    />
+  </head>
+  <body class="min-h-screen antialiased">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-white"
+    >
+      跳到主要内容
+    </a>
+
+    <Header />
+
+    <main id="main" class:list={['mx-auto w-full px-4 pb-8 pt-8 md:px-6', widthClass]}>
+      <slot />
+    </main>
+
+    <Footer />
+
+    {showMobileCta && <MobileCTABar />}
+
+    <!-- 站点级品牌结构化数据 -->
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: SITE.name,
+        url: SITE.url,
+        description: SITE.description,
+      }).replace(/</g, '\\u003c')}
+    />
+  </body>
+</html>

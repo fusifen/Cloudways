@@ -1,11 +1,268 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AffiliateButton from '../components/AffiliateButton.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import ProductCard from '../components/ProductCard.astro';
+import ProductComparisonTable from '../components/ProductComparisonTable.astro';
+import Icon from '../components/Icon.astro';
+import { CATEGORIES, CATEGORY_KEYS, HOSTING_FEATURES, SITE, TRUST_POINTS } from '../consts';
+import { countByCategory, getPublishedArticles, getSortedProducts } from '../lib/articles';
+import { itemListSchema } from '../lib/schema';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const products = await getSortedProducts();
+const articles = await getPublishedArticles();
+const featuredProducts = products.filter((p) => p.data.featured);
+const latest = articles.slice(0, 6);
+const featuredArticle = articles.find((a) => a.data.featured) ?? articles[0];
+const catCounts = countByCategory(articles);
+
+const stats = [
+  { value: String(products.length), label: '家底层云厂商' },
+  { value: `${products.reduce((n, p) => n + p.data.plans.length, 0)}`, label: '个配置档位' },
+  { value: `${products.reduce((n, p) => n + p.data.datacenters.length, 0)}+`, label: '个全球机房' },
+  { value: String(articles.length), label: '篇实测文章' },
+];
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<BaseLayout
+  title="Cloudways 中文评测、教程与价格对比"
+  description={SITE.description}
+  path="/"
+  keywords={['Cloudways', 'Cloudways 评测', 'Cloudways 价格', '托管云主机', 'Breeze 缓存']}
+  schemas={[
+    itemListSchema(
+      products.map((p) => ({ name: `Cloudways ${p.data.name}`, url: `/products/${p.id}/` })),
+      'Cloudways 支持的底层云厂商',
+    ),
+  ]}
+  width="wide"
+>
+  <!-- ==================== Hero ==================== -->
+  <section class="relative overflow-hidden rounded-3xl border border-line bg-white px-6 py-12 sm:px-10 sm:py-16">
+    <div
+      class="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-100/60 blur-3xl"
+      aria-hidden="true"
+    >
+    </div>
+    <div
+      class="pointer-events-none absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-accent-400/10 blur-3xl"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div class="relative max-w-3xl">
+      <span class="chip border border-brand-200 bg-brand-50 text-brand-700">
+        <Icon name="sparkles" size={13} />
+        2026 年最新实测数据
+      </span>
+
+      <h1 class="mt-5 text-[2.1rem] font-bold leading-[1.15] tracking-tight sm:text-[3rem]">
+        Cloudways 托管云主机
+        <span class="bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">
+          中文完全指南
+        </span>
+      </h1>
+
+      <p class="mt-5 max-w-2xl text-[17px] leading-relaxed text-ink-500">
+        把 DigitalOcean、AWS、Google Cloud、Linode、Vultr 五家云厂商放进同一个控制面板，
+        系统层运维全托管。我们用实测数据拆解每一档配置的价格与性能，
+        帮你选到真正合适的方案，而不是最贵的那个。
+      </p>
+
+      <div class="mt-7 flex flex-wrap items-center gap-3">
+        <AffiliateButton label="免费试用 Cloudways" variant="cta" size="lg" />
+        <a href="/compare/" class="btn btn-ghost">
+          <Icon name="chart" size={16} />
+          查看配置对比表
+        </a>
+      </div>
+
+      <ul class="mt-7 flex flex-wrap gap-x-6 gap-y-2.5">
+        {
+          TRUST_POINTS.map((point) => (
+            <li class="inline-flex items-center gap-2 text-[13.5px] text-ink-500">
+              <Icon name="check" size={15} class="text-accent-600" />
+              {point}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <!-- 数据条 -->
+    <dl class="relative mt-10 grid grid-cols-2 gap-4 border-t border-line pt-8 sm:grid-cols-4">
+      {
+        stats.map((stat) => (
+          <div>
+            <dt class="text-[13px] text-ink-400">{stat.label}</dt>
+            <dd class="mt-1 text-2xl font-bold tracking-tight text-ink-900">{stat.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+
+  <!-- ==================== 云厂商 ==================== -->
+  <section class="mt-14" aria-labelledby="providers-heading">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 id="providers-heading" class="text-2xl font-bold tracking-tight">
+          五家底层云厂商，一个控制面板
+        </h2>
+        <p class="mt-2 text-[15px] text-ink-500">
+          Cloudways 整合了主流 IaaS 供应商。同一套面板、同一套缓存与备份体系，随时切换。
+        </p>
+      </div>
+      <a
+        href="/products/"
+        class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
+      >
+        查看全部产品
+        <Icon name="arrowRight" size={15} />
+      </a>
+    </div>
+
+    <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {products.map((product) => <ProductCard product={product} />)}
+    </div>
+  </section>
+
+  <!-- ==================== 托管特色 ==================== -->
+  <section class="mt-16" aria-labelledby="features-heading">
+    <h2 id="features-heading" class="text-2xl font-bold tracking-tight">你花的钱买到了什么</h2>
+    <p class="mt-2 text-[15px] text-ink-500">
+      这些能力在别处需要额外购买或自行搭建，在 Cloudways 里是标配。
+    </p>
+
+    <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        HOSTING_FEATURES.map((feature) => (
+          <div class="card p-5 transition-shadow hover:shadow-lift">
+            <span class="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600">
+              <Icon name={feature.icon} size={19} />
+            </span>
+            <h3 class="mt-4 text-[16px] font-bold text-ink-900">{feature.title}</h3>
+            <p class="mt-2 text-[14px] leading-relaxed text-ink-500">{feature.desc}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- ==================== 对比表 ==================== -->
+  <section class="mt-16" aria-labelledby="compare-heading">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 id="compare-heading" class="text-2xl font-bold tracking-tight">配置与价格对比表</h2>
+        <p class="mt-2 text-[15px] text-ink-500">
+          按内存档位筛选、按月费排序，一眼看出同配置下哪家最划算。
+        </p>
+      </div>
+      <a
+        href="/pricing/"
+        class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
+      >
+        完整价格一览
+        <Icon name="arrowRight" size={15} />
+      </a>
+    </div>
+
+    <ProductComparisonTable products={products} class="mt-6" />
+  </section>
+
+  <!-- ==================== 推荐方案 ==================== -->
+  {
+    featuredProducts.length > 0 && (
+      <section class="mt-16" aria-labelledby="picks-heading">
+        <h2 id="picks-heading" class="text-2xl font-bold tracking-tight">
+          编辑部推荐
+        </h2>
+        <p class="mt-2 text-[15px] text-ink-500">按不同预算与场景给出的首选方案。</p>
+
+        <div class="mt-6 grid gap-5 lg:grid-cols-3">
+          {featuredProducts.map((product) => (
+            <ProductCard product={product} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ==================== 最新文章 ==================== -->
+  <section class="mt-16" aria-labelledby="articles-heading">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 id="articles-heading" class="text-2xl font-bold tracking-tight">最新评测与教程</h2>
+        <p class="mt-2 text-[15px] text-ink-500">
+          覆盖教程、评测、对比、优惠、搬家与常见问题六大方向。
+        </p>
+      </div>
+      <a
+        href="/articles/"
+        class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
+      >
+        全部文章
+        <Icon name="arrowRight" size={15} />
+      </a>
+    </div>
+
+    <!-- 分类入口 -->
+    <div class="mt-6 flex flex-wrap gap-2">
+      {
+        CATEGORY_KEYS.map((key) => (
+          <a
+            href={`/categories/${key}/`}
+            class="chip border border-line bg-white text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+          >
+            <span
+              class="h-1.5 w-1.5 rounded-full"
+              style={`background:${CATEGORIES[key].color}`}
+              aria-hidden="true"
+            />
+            {CATEGORIES[key].label}
+            <span class="text-ink-400">{catCounts[key] ?? 0}</span>
+          </a>
+        ))
+      }
+    </div>
+
+    {
+      featuredArticle && (
+        <div class="mt-6">
+          <ArticleCard article={featuredArticle} featured />
+        </div>
+      )
+    }
+
+    <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {latest
+        .filter((a) => a.id !== featuredArticle?.id)
+        .slice(0, 6)
+        .map((article) => (
+          <ArticleCard article={article} />
+        ))}
+    </div>
+  </section>
+
+  <!-- ==================== 结尾 CTA ==================== -->
+  <section
+    class="mt-16 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-600 to-brand-700 px-6 py-12 text-center sm:px-10"
+  >
+    <h2 class="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+      先免费试用，再决定要不要付费
+    </h2>
+    <p class="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-brand-100">
+      无需信用卡即可部署一台服务器，完整体验 Breeze 缓存、自动备份与 24/7 客服。
+      试用结束不满意，直接删除即可，按小时计费不会产生额外费用。
+    </p>
+    <div class="mt-7 flex flex-wrap items-center justify-center gap-3">
+      <AffiliateButton label="开始免费试用" variant="cta" size="lg" />
+      <a
+        href="/products/"
+        class="btn border border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+      >
+        先看看方案
+      </a>
+    </div>
+  </section>
+</BaseLayout>

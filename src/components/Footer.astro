@@ -1,0 +1,88 @@
+---
+import { FOOTER_LINKS, SITE, PROVIDERS } from '../consts';
+import Icon from './Icon.astro';
+
+const year = new Date().getFullYear();
+const providers = Object.values(PROVIDERS);
+---
+
+<footer class="mt-20 border-t border-line bg-white">
+  <div class="container-page py-12">
+    <div class="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
+      <!-- 品牌区 -->
+      <div class="lg:col-span-2">
+        <div class="flex items-center gap-2.5">
+          <span
+            class="grid h-9 w-9 place-items-center rounded-[10px] bg-gradient-to-br from-brand-500 to-brand-700 text-white"
+          >
+            <Icon name="bolt" size={18} strokeWidth={2} />
+          </span>
+          <span class="text-[15px] font-bold text-ink-900">{SITE.name}</span>
+        </div>
+        <p class="mt-4 max-w-sm text-sm leading-relaxed text-ink-500">
+          专注 Cloudways 托管云主机的中文评测与实战教程。我们实测五家底层云厂商的性能与价格，
+          帮你用数据而不是营销话术做决策。
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2">
+          {
+            providers.map((p) => (
+              <span
+                class="chip border border-line bg-surface text-ink-500"
+                style={`color:${p.color}`}
+              >
+                {p.label}
+              </span>
+            ))
+          }
+        </div>
+        <a
+          href="/rss.xml"
+          class="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-ink-500 hover:text-brand-600"
+        >
+          <Icon name="rss" size={16} />
+          订阅 RSS
+        </a>
+      </div>
+
+      <!-- 链接区 -->
+      {
+        FOOTER_LINKS.map((group) => (
+          <div>
+            <h3 class="text-sm font-semibold text-ink-900">{group.title}</h3>
+            <ul class="mt-4 space-y-2.5">
+              {group.links.map((link) => (
+                <li>
+                  <a
+                    href={link.href}
+                    class="text-sm text-ink-500 transition-colors hover:text-brand-600"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+
+    <!-- 推广声明 -->
+    <div class="mt-10 rounded-xl border border-line bg-surface p-4 text-xs leading-relaxed text-ink-500">
+      <strong class="text-ink-700">推广声明：</strong>
+      本站包含 Cloudways 的联盟推广链接。当你通过本站链接注册并产生消费时，我们可能获得佣金。
+      这不会增加你的任何费用，也不影响我们的评测结论 —— 所有评分与推荐均基于实测数据独立给出。
+      <a href="/affiliate-disclosure/" class="ml-1 font-medium text-brand-600 hover:underline">
+        了解详情
+      </a>
+    </div>
+
+    <div
+      class="mt-8 flex flex-col items-center justify-between gap-3 border-t border-line pt-6 text-xs text-ink-400 sm:flex-row"
+    >
+      <p>© {year} {SITE.name}. 保留所有权利。</p>
+      <p>
+        本站与 Cloudways 官方无从属关系，Cloudways 为 Cloudways Ltd. 的注册商标。
+      </p>
+    </div>
+  </div>
+</footer>

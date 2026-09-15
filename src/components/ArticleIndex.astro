@@ -1,0 +1,177 @@
+---
+/**
+ * 文章索引页通用模板
+ * 被 /articles/、/articles/page/N/、/categories/X/、/categories/X/page/N/ 复用
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import ArticleCard from './ArticleCard.astro';
+import Pagination from './Pagination.astro';
+import AffiliateButton from './AffiliateButton.astro';
+import Icon from './Icon.astro';
+import { ARTICLES_PER_PAGE, CATEGORIES, CATEGORY_KEYS, type CategoryKey } from '../consts';
+import { collectTags, type Article } from '../lib/articles';
+import { breadcrumbSchema, itemListSchema } from '../lib/schema';
+
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+  keywords?: string[];
+  /** 当前页文章 */
+  items: Article[];
+  /** 全部已发布文章（用于统计与标签云） */
+  allArticles: Article[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+  /** 分页基址，如 /articles/ 或 /categories/tutorial/ */
+  baseUrl: string;
+  /** 当前激活的分类（用于高亮筛选条） */
+  activeCategory?: CategoryKey;
+  crumbs: { label: string; href?: string }[];
+  /** 每个分类的文章数 */
+  counts: Record<string, number>;
+}
+
+const {
+  title,
+  description,
+  path,
+  keywords = [],
+  items,
+  allArticles,
+  total,
+  currentPage,
+  totalPages,
+  baseUrl,
+  activeCategory,
+  crumbs,
+  counts,
+} = Astro.props;
+
+const tags = collectTags(allArticles).slice(0, 14);
+const rangeStart = total === 0 ? 0 : (currentPage - 1) * ARTICLES_PER_PAGE + 1;
+const rangeEnd = Math.min(currentPage * ARTICLES_PER_PAGE, total);
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  keywords={keywords}
+  schemas={[
+    breadcrumbSchema(crumbs),
+    itemListSchema(
+      items.map((a) => ({ name: a.data.title, url: `/articles/${a.id}/` })),
+      title,
+    ),
+  ]}
+  width="wide"
+>
+  <Breadcrumbs items={crumbs} />
+
+  <header class="mt-6 max-w-3xl">
+    <h1 class="text-3xl font-bold tracking-tight sm:text-[2.4rem]">{title}</h1>
+    <p class="mt-4 text-[17px] leading-relaxed text-ink-500">{description}</p>
+  </header>
+
+  <!-- 分类筛选 -->
+  <nav class="mt-8 flex flex-wrap gap-2" aria-label="按分类筛选">
+    <a
+      href="/articles/"
+      class:list={[
+        'chip border transition-colors',
+        !activeCategory
+          ? 'border-brand-300 bg-brand-600 text-white'
+          : 'border-line bg-white text-ink-600 hover:border-brand-300 hover:text-brand-700',
+      ]}
+    >
+      全部
+      <span class={!activeCategory ? 'text-white/70' : 'text-ink-400'}>{allArticles.length}</span>
+    </a>
+    {
+      CATEGORY_KEYS.map((key) => (
+        <a
+          href={`/categories/${key}/`}
+          class:list={[
+            'chip border transition-colors',
+            activeCategory === key
+              ? 'border-brand-300 bg-brand-600 text-white'
+              : 'border-line bg-white text-ink-600 hover:border-brand-300 hover:text-brand-700',
+          ]}
+        >
+          <span
+            class="h-1.5 w-1.5 rounded-full"
+            style={`background:${activeCategory === key ? '#fff' : CATEGORIES[key].color}`}
+            aria-hidden="true"
+          />
+          {CATEGORIES[key].label}
+          <span class={activeCategory === key ? 'text-white/70' : 'text-ink-400'}>
+            {counts[key] ?? 0}
+          </span>
+        </a>
+      ))
+    }
+  </nav>
+
+  <!-- 标签云 -->
+  {
+    tags.length > 0 && (
+      <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
+        <span class="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-400">
+          <Icon name="tag" size={13} />
+          热门标签
+        </span>
+        {tags.map((t) => (
+          <a
+            href={`/tags/${encodeURIComponent(t.tag)}/`}
+            class="text-[12.5px] text-ink-500 transition-colors hover:text-brand-600"
+          >
+            #{t.tag}
+            <span class="text-ink-400">{t.count}</span>
+          </a>
+        ))}
+      </div>
+    )
+  }
+
+  <!-- 结果统计 -->
+  <p class="mt-6 text-[13.5px] text-ink-400">
+    共 {total} 篇文章{total > 0 && `，当前显示第 ${rangeStart}–${rangeEnd} 篇`}
+    {totalPages > 1 && `（第 ${currentPage} / ${totalPages} 页）`}
+  </p>
+
+  <!-- 列表 -->
+  {
+    items.length > 0 ? (
+      <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((article) => (
+          <ArticleCard article={article} />
+        ))}
+      </div>
+    ) : (
+      <div class="card mt-5 p-12 text-center">
+        <p class="text-[15px] text-ink-500">这个分类下暂时还没有文章。</p>
+        <a href="/articles/" class="btn btn-ghost mt-4">
+          查看全部文章
+        </a>
+      </div>
+    )
+  }
+
+  <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl={baseUrl} />
+
+  <section class="mt-14 rounded-2xl border border-brand-200 bg-brand-50/60 p-6 sm:p-8">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-ink-900">看完还是不确定选哪个？</h2>
+        <p class="mt-2 max-w-xl text-[14.5px] leading-relaxed text-ink-600">
+          Cloudways 提供无需信用卡的免费试用，按小时计费。部署一台实测一下，
+          比看十篇评测都有效。
+        </p>
+      </div>
+      <AffiliateButton label="免费试用 Cloudways" variant="cta" size="lg" class="shrink-0" />
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,25 @@
+---
+import ArticleIndex from '../../components/ArticleIndex.astro';
+import { countByCategory, getPublishedArticles, paginateItems } from '../../lib/articles';
+
+const all = await getPublishedArticles();
+const { items, currentPage, totalPages } = paginateItems(all, 1);
+const counts = countByCategory(all);
+
+const crumbs = [{ label: '首页', href: '/' }, { label: '文章教程' }];
+---
+
+<ArticleIndex
+  title="Cloudways 文章教程与评测"
+  description={`Cloudways 中文内容库，共 ${all.length} 篇实测文章。覆盖新手教程、深度评测、厂商对比、优惠信息、网站搬家与常见问题。`}
+  path="/articles/"
+  keywords={['Cloudways 教程', 'Cloudways 评测', 'Cloudways 对比', '托管云主机教程']}
+  items={items}
+  allArticles={all}
+  total={all.length}
+  currentPage={currentPage}
+  totalPages={totalPages}
+  baseUrl="/articles/"
+  crumbs={crumbs}
+  counts={counts}
+/>

@@ -1,0 +1,43 @@
+---
+/**
+ * FAQ 折叠区块
+ * 使用原生 <details> 保证无 JS 也可展开，同时输出 FAQPage 结构化数据由页面负责
+ */
+import Icon from './Icon.astro';
+
+interface Props {
+  faqs: { question: string; answer: string }[];
+  title?: string;
+  class?: string;
+}
+
+const { faqs, title = '常见问题', class: className = '' } = Astro.props;
+---
+
+{
+  faqs.length > 0 && (
+    <section class:list={['mt-12', className]} aria-labelledby="faq-heading">
+      <h2 id="faq-heading" class="flex items-center gap-2.5 text-xl font-bold">
+        <span class="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600">
+          <Icon name="info" size={17} />
+        </span>
+        {title}
+      </h2>
+      <div class="mt-5 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
+        {faqs.map((faq) => (
+          <details class="group px-5 py-4" name="article-faq">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-semibold text-ink-900 marker:hidden">
+              <span>{faq.question}</span>
+              <span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-surface-2 text-ink-500 transition-transform group-open:rotate-45">
+                <Icon name="plus" size={14} />
+              </span>
+            </summary>
+            <div class="mt-3 pr-8 text-[14.5px] leading-relaxed text-ink-600">
+              {faq.answer}
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+  )
+}

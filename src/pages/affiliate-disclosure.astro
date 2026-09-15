@@ -1,0 +1,102 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import AffiliateDisclosure from '../components/AffiliateDisclosure.astro';
+import AffiliateButton from '../components/AffiliateButton.astro';
+import Icon from '../components/Icon.astro';
+import { SITE } from '../consts';
+import { breadcrumbSchema } from '../lib/schema';
+
+const crumbs = [{ label: '首页', href: '/' }, { label: '推广声明' }];
+
+const commitments = [
+  { text: '评测数据来自实测，不因佣金高低调整结论', ok: true },
+  { text: '明确指出产品的缺点与不适用场景', ok: true },
+  { text: '当竞品更适合某类需求时，如实推荐竞品', ok: true },
+  { text: '不伪造优惠力度，不承诺无法兑现的折扣', ok: true },
+  { text: '不隐藏或模糊化推广链接的存在', ok: true },
+  { text: '接受厂商付费修改评测结论 —— 我们从不这样做', ok: false },
+];
+---
+
+<BaseLayout
+  title="推广声明"
+  description={`${SITE.name}的联盟推广披露：我们如何获得收入、佣金是否影响评测结论、以及我们对读者的承诺。`}
+  path="/affiliate-disclosure/"
+  keywords={['推广声明', '联盟营销', 'affiliate disclosure', '编辑独立性']}
+  schemas={[breadcrumbSchema(crumbs)]}
+  width="default"
+>
+  <Breadcrumbs items={crumbs} />
+
+  <header class="mt-6">
+    <span class="chip border border-amber-200 bg-amber-50 text-amber-700">
+      <Icon name="info" size={13} />
+      透明度声明
+    </span>
+    <h1 class="mt-4 text-3xl font-bold tracking-tight sm:text-[2.4rem]">推广声明</h1>
+    <p class="mt-4 text-[17px] leading-relaxed text-ink-500">
+      你有权知道本站如何获得收入，以及这是否影响我们给出的结论。这一页把话说清楚。
+    </p>
+  </header>
+
+  <AffiliateDisclosure variant="full" class="mt-10" />
+
+  <section class="mt-12" aria-labelledby="commit-heading">
+    <h2 id="commit-heading" class="text-xl font-bold tracking-tight">我们的承诺</h2>
+    <div class="mt-5 space-y-3">
+      {
+        commitments.map((item) => (
+          <div
+            class:list={[
+              'flex items-start gap-3 rounded-xl border px-4 py-3.5',
+              item.ok ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50',
+            ]}
+          >
+            <Icon
+              name={item.ok ? 'check' : 'close'}
+              size={16}
+              class:list={['mt-0.5 shrink-0', item.ok ? 'text-emerald-600' : 'text-rose-500']}
+            />
+            <span class="text-[14.5px] text-ink-700">{item.text}</span>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="mt-12" aria-labelledby="how-heading">
+    <h2 id="how-heading" class="text-xl font-bold tracking-tight">技术上是如何实现的</h2>
+    <div class="prose-custom mt-5">
+      <p>
+        站内所有指向 Cloudways 的链接都通过一个统一的工具函数生成，会自动附加我们的联盟追踪参数。
+        这些链接带有 <code>rel="sponsored nofollow noopener"</code> 属性，
+        明确告知搜索引擎这是商业推广链接 —— 这也符合搜索引擎的规范要求。
+      </p>
+      <p>
+        如果你不希望链接携带追踪参数，可以在浏览器中复制链接后手动删除
+        <code>id</code>、<code>utm_source</code> 等查询参数，访问效果与价格完全一致。
+      </p>
+    </div>
+  </section>
+
+  <section class="mt-12" aria-labelledby="contact-heading">
+    <h2 id="contact-heading" class="text-xl font-bold tracking-tight">有疑问请联系</h2>
+    <p class="mt-4 text-[15px] leading-relaxed text-ink-600">
+      如果你认为本站某处内容存在误导、数据错误，或未充分披露推广关系，
+      欢迎来信 <strong>{SITE.email}</strong>。我们会核实并修正。
+    </p>
+  </section>
+
+  <section class="mt-14 rounded-2xl border border-brand-200 bg-brand-50/60 p-6 sm:p-8">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-ink-900">了解清楚了？去免费试用</h2>
+        <p class="mt-2 max-w-xl text-[14.5px] leading-relaxed text-ink-600">
+          无需信用卡。你可以先验证我们写的内容是否属实，再决定要不要付费。
+        </p>
+      </div>
+      <AffiliateButton label="免费试用 Cloudways" variant="cta" size="lg" class="shrink-0" />
+    </div>
+  </section>
+</BaseLayout>

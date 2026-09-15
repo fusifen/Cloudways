@@ -1,0 +1,153 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import AffiliateButton from '../components/AffiliateButton.astro';
+import Icon from '../components/Icon.astro';
+import { SITE } from '../consts';
+import { breadcrumbSchema } from '../lib/schema';
+
+const crumbs = [{ label: '首页', href: '/' }, { label: '关于本站' }];
+
+const principles = [
+  {
+    icon: 'chart',
+    title: '数据优先于观点',
+    desc: '所有性能结论都来自我们自己跑的测试，不是转述厂商宣传页。文中的数据会标注测试条件。',
+  },
+  {
+    icon: 'shieldCheck',
+    title: '如实说明缺点',
+    desc: '每个厂商页面都有「需要注意」板块。不做只讲优点的软文，因为那对读者没有价值。',
+  },
+  {
+    icon: 'dollar',
+    title: '价格标注核对日期',
+    desc: '云主机价格变动频繁，我们在产品页标注最后核对日期，并提醒以官网实时报价为准。',
+  },
+  {
+    icon: 'info',
+    title: '公开推广关系',
+    desc: '所有联盟链接都有明确披露。读者有权知道我们如何获得收入，以及这是否影响结论。',
+  },
+];
+
+const roadmap = [
+  { status: 'done', text: '五家云厂商完整产品线与价格数据' },
+  { status: 'done', text: '配置对比表与同档位最便宜方案分析' },
+  { status: 'done', text: '教程、评测、对比、优惠、搬家、常见问题六大内容方向' },
+  { status: 'done', text: '基于 Git 的 Sveltia CMS 内容管理后台' },
+  { status: 'planned', text: '英文站点（多语言结构已预留）' },
+  { status: 'planned', text: '更多机房的真实延迟实测数据' },
+];
+---
+
+<BaseLayout
+  title="关于本站"
+  description={`${SITE.name}的定位、编辑原则与推广披露方式。我们如何评测 Cloudways、数据从哪来、以及如何获得收入。`}
+  path="/about/"
+  keywords={['关于 Cloudways 指南', '编辑原则', '评测方法']}
+  schemas={[breadcrumbSchema(crumbs)]}
+  width="default"
+>
+  <Breadcrumbs items={crumbs} />
+
+  <header class="mt-6">
+    <span class="chip border border-brand-200 bg-brand-50 text-brand-700">
+      <Icon name="bookOpen" size={13} />
+      关于我们
+    </span>
+    <h1 class="mt-4 text-3xl font-bold tracking-tight sm:text-[2.4rem]">
+      为什么会有这个站
+    </h1>
+  </header>
+
+  <div class="prose-custom mt-8">
+    <p>
+      Cloudways 的中文资料长期处于两个极端：要么是厂商自己的营销页，只讲优点；
+      要么是几年前的过期教程，价格和界面都对不上。真正基于实测、且把缺点也讲清楚的内容很少。
+    </p>
+    <p>
+      这个站就是为了填补这个空缺。我们把五家底层云厂商的完整产品线拆开，
+      用实测数据说明每一档配置能扛多少流量、同价位下该选哪家、以及什么情况下
+      <strong>不应该</strong>选 Cloudways。
+    </p>
+
+    <h2>编辑原则</h2>
+  </div>
+
+  <div class="mt-6 grid gap-4 sm:grid-cols-2">
+    {
+      principles.map((item) => (
+        <div class="card flex gap-4 p-5">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
+            <Icon name={item.icon} size={18} />
+          </span>
+          <div>
+            <h3 class="text-[15px] font-bold text-ink-900">{item.title}</h3>
+            <p class="mt-1.5 text-[13.5px] leading-relaxed text-ink-500">{item.desc}</p>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+
+  <div class="prose-custom mt-12">
+    <h2>我们如何获得收入</h2>
+    <p>
+      本站通过 Cloudways 的联盟推广计划获得收入。当你通过站内链接注册并产生消费时，
+      Cloudways 会向我们支付一笔佣金 —— <strong>这笔钱完全由 Cloudways 承担，
+      你支付的价格与直接访问官网完全一致</strong>。
+    </p>
+    <p>
+      这笔收入覆盖服务器、域名与内容维护成本，让我们能持续产出免费内容。
+      完整的披露条款见<strong>推广声明</strong>页面。
+    </p>
+
+    <h2>内容覆盖范围</h2>
+  </div>
+
+  <div class="mt-6 grid gap-3 sm:grid-cols-2">
+    {
+      roadmap.map((item) => (
+        <div class="flex items-center gap-3 rounded-xl border border-line bg-white px-4 py-3.5">
+          <span
+            class:list={[
+              'grid h-6 w-6 shrink-0 place-items-center rounded-md',
+              item.status === 'done'
+                ? 'bg-emerald-100 text-emerald-600'
+                : 'bg-surface-2 text-ink-400',
+            ]}
+          >
+            <Icon name={item.status === 'done' ? 'check' : 'clock'} size={13} />
+          </span>
+          <span class="text-[14px] text-ink-700">{item.text}</span>
+        </div>
+      ))
+    }
+  </div>
+
+  <div class="prose-custom mt-12">
+    <h2>联系我们</h2>
+    <p>
+      对内容有疑问、发现数据错误、或希望我们评测某个具体场景，欢迎来信：
+      <strong>{SITE.email}</strong>。指出数据错误的来信我们尤其欢迎 —— 准确比面子重要。
+    </p>
+    <p class="rounded-xl bg-surface px-4 py-3.5 text-[14px] text-ink-500">
+      <strong class="text-ink-700">免责声明：</strong>
+      本站与 Cloudways 官方无从属关系。站内价格为撰写时的标价，云主机价格调整频繁，
+      实际费用请以官网结算页面为准。Cloudways 为 Cloudways Ltd. 的注册商标。
+    </p>
+  </div>
+
+  <section class="mt-14 rounded-2xl border border-brand-200 bg-brand-50/60 p-6 sm:p-8">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-ink-900">开始你的 Cloudways 之旅</h2>
+        <p class="mt-2 max-w-xl text-[14.5px] leading-relaxed text-ink-600">
+          无需信用卡即可免费试用。先用真实环境验证，再决定要不要付费。
+        </p>
+      </div>
+      <AffiliateButton label="免费试用 Cloudways" variant="cta" size="lg" class="shrink-0" />
+    </div>
+  </section>
+</BaseLayout>

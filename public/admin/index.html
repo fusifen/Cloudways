@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Cloudways 指南 · 内容管理后台</title>
+    <link rel="icon" href="/favicon.svg" />
+
+    <!--
+      Sveltia CMS 主程序使用自托管方式（由 scripts/sync-cms.mjs 从 node_modules 复制）。
+      不依赖 unpkg 等公共 CDN —— 国内网络下也能正常打开后台。
+      若你希望改回 CDN，把下面的 script 换成：
+        <script src="https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js"></script>
+    -->
+    <script src="/admin/sveltia-cms.js"></script>
+  </head>
+  <body>
+    <!-- 后台加载前的兜底提示：JS 正常加载后 Sveltia 会接管并覆盖此内容 -->
+    <div id="cms-fallback" style="font-family: system-ui, -apple-system, 'PingFang SC', sans-serif; padding: 48px 24px; text-align: center; color: #5b6b85;">
+      <p style="font-size: 15px">正在加载内容管理后台…</p>
+      <p style="font-size: 13px; margin-top: 12px">
+        如果长时间停留在此页面，请确认
+        <code>public/admin/sveltia-cms.js</code> 存在（运行 <code>npm run cms:sync</code> 生成）。
+      </p>
+    </div>
+  </body>
+</html>

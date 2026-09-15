@@ -1,0 +1,237 @@
+---
+/**
+ * 多云厂商配置与价格对比表
+ * - 服务端渲染全部档位（利于 SEO 抓取）
+ * - 客户端仅负责「内存档位筛选」与「价格排序」
+ */
+import { affiliateUrl, PROVIDERS, type ProviderKey } from '../consts';
+import { formatPrice, type Product } from '../lib/articles';
+import Icon from './Icon.astro';
+
+interface Props {
+  products: Product[];
+  class?: string;
+}
+
+const { products, class: className = '' } = Astro.props;
+
+// 展开为「厂商 × 档位」的扁平行
+const rows = products.flatMap((product) =>
+  product.data.plans.map((plan) => ({
+    providerId: product.id,
+    provider: product.data.provider as ProviderKey,
+    providerName: product.data.name,
+    brandColor: product.data.brandColor,
+    rating: product.data.rating,
+    plan,
+    ctaPath: product.data.ctaPath,
+    hourly: plan.hourlyPrice,
+    monthly: plan.monthlyPrice,
+  })),
+);
+
+// 可用的内存档位（去重排序）
+const ramTiers = [...new Set(rows.map((r) => r.plan.ram))].sort((a, b) => a - b);
+---
+
+<div class:list={['card overflow-hidden', className]} data-compare-table>
+  <!-- 工具栏 -->
+  <div class="flex flex-wrap items-center gap-3 border-b border-line bg-surface px-4 py-3.5">
+    <div class="flex items-center gap-2 text-sm font-semibold text-ink-700">
+      <Icon name="filter" size={16} class="text-brand-600" />
+      内存档位
+    </div>
+    <div class="flex flex-wrap gap-1.5" role="group" aria-label="按内存筛选">
+      <button
+        type="button"
+        class="tier-btn rounded-lg bg-brand-600 px-3 py-1.5 text-[13px] font-semibold text-white transition-colors"
+        data-ram="all"
+      >
+        全部
+      </button>
+      {
+        ramTiers.map((ram) => (
+          <button
+            type="button"
+            class="tier-btn rounded-lg bg-white px-3 py-1.5 text-[13px] font-medium text-ink-600 ring-1 ring-line transition-colors hover:bg-brand-50"
+            data-ram={String(ram)}
+          >
+            {ram}GB
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="ml-auto flex items-center gap-2">
+      <label for="sort-select" class="text-[13px] text-ink-500">排序</label>
+      <select
+        id="sort-select"
+        class="rounded-lg border border-line bg-white px-2.5 py-1.5 text-[13px] font-medium text-ink-700 outline-none focus:border-brand-400"
+      >
+        <option value="price-asc">月费从低到高</option>
+        <option value="price-desc">月费从高到低</option>
+        <option value="ram-asc">内存从小到大</option>
+        <option value="rating-desc">评分从高到低</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 表格 -->
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[860px] border-collapse text-sm">
+      <thead>
+        <tr class="border-b border-line bg-white text-left text-[13px] text-ink-500">
+          <th scope="col" class="px-4 py-3 font-semibold">云厂商</th>
+          <th scope="col" class="px-4 py-3 font-semibold">档位</th>
+          <th scope="col" class="px-4 py-3 font-semibold">配置</th>
+          <th scope="col" class="px-4 py-3 text-right font-semibold">小时价</th>
+          <th scope="col" class="px-4 py-3 text-right font-semibold">月费</th>
+          <th scope="col" class="px-4 py-3 font-semibold">适合场景</th>
+          <th scope="col" class="px-4 py-3 text-right font-semibold">操作</th>
+        </tr>
+      </thead>
+      <tbody data-rows>
+        {
+          rows.map((row) => (
+            <tr
+              class="border-b border-line/70 transition-colors last:border-0 hover:bg-surface"
+              data-ram={String(row.plan.ram)}
+              data-monthly={String(row.monthly)}
+              data-rating={String(row.rating)}
+              data-provider={row.provider}
+            >
+              <td class="px-4 py-3.5">
+                <div class="flex items-center gap-2.5">
+                  <span
+                    class="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[11px] font-bold text-white"
+                    style={`background:${row.brandColor}`}
+                    aria-hidden="true"
+                  >
+                    {row.providerName.slice(0, 2).toUpperCase()}
+                  </span>
+                  <div class="min-w-0">
+                    <a
+                      href={`/products/${row.providerId}/`}
+                      class="block truncate font-semibold text-ink-900 hover:text-brand-700"
+                    >
+                      {row.providerName}
+                    </a>
+                    {row.plan.popular && (
+                      <span class="text-[11px] font-medium text-accent-600">★ 主推档位</span>
+                    )}
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3.5 font-medium text-ink-700">{row.plan.name}</td>
+              <td class="px-4 py-3.5">
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-ink-600">
+                  <span class="inline-flex items-center gap-1">
+                    <Icon name="cpu" size={13} class="text-ink-400" />
+                    {row.plan.vcpu} vCPU
+                  </span>
+                  <span class="inline-flex items-center gap-1">
+                    <Icon name="database" size={13} class="text-ink-400" />
+                    {row.plan.ram}GB
+                  </span>
+                  <span class="inline-flex items-center gap-1">
+                    <Icon name="layers" size={13} class="text-ink-400" />
+                    {row.plan.storage}GB
+                  </span>
+                  <span class="inline-flex items-center gap-1">
+                    <Icon name="globe" size={13} class="text-ink-400" />
+                    {row.plan.bandwidth}TB
+                  </span>
+                </div>
+              </td>
+              <td class="px-4 py-3.5 text-right tabular-nums text-ink-500">
+                {formatPrice(row.hourly, 3)}
+              </td>
+              <td class="px-4 py-3.5 text-right">
+                <span class="text-base font-bold tabular-nums text-ink-900">
+                  {formatPrice(row.monthly, row.monthly < 10 ? 2 : 0)}
+                </span>
+              </td>
+              <td class="px-4 py-3.5 text-[13px] text-ink-500">{row.plan.bestFor ?? '—'}</td>
+              <td class="px-4 py-3.5 text-right">
+                <a
+                  href={affiliateUrl(row.ctaPath, { params: { plan: row.plan.sku ?? row.provider } })}
+                  class="btn btn-cta px-3 py-1.5 text-[13px]"
+                  target="_blank"
+                  rel="sponsored nofollow noopener"
+                  data-affiliate="cloudways"
+                >
+                  部署
+                  <Icon name="arrowUpRight" size={14} />
+                </a>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <p class="border-t border-line bg-surface px-4 py-3 text-xs text-ink-400">
+    <Icon name="info" size={13} class="mr-1 inline align-[-2px]" />
+    价格为 Cloudways 官方标价，按小时计费、月底结算。底层 IaaS 调价频繁，下单前请以官网实时报价为准。
+    表内所有按钮均直达 Cloudways 官方注册页。
+  </p>
+</div>
+
+<script>
+  const root = document.querySelector('[data-compare-table]');
+  if (root) {
+    const tbody = root.querySelector('[data-rows]');
+    const tierBtns = root.querySelectorAll('.tier-btn');
+    const sortSelect = root.querySelector('#sort-select');
+
+    let activeRam = 'all';
+
+    const applyFilter = () => {
+      const rows = Array.from(tbody?.querySelectorAll('tr') ?? []);
+      rows.forEach((row) => {
+        const ram = row.getAttribute('data-ram');
+        const show = activeRam === 'all' || ram === activeRam;
+        row.style.display = show ? '' : 'none';
+      });
+    };
+
+    const applySort = () => {
+      const rows = Array.from(tbody?.querySelectorAll('tr') ?? []);
+      const mode = sortSelect?.value ?? 'price-asc';
+      const num = (el, attr) => parseFloat(el.getAttribute(attr) || '0');
+
+      rows.sort((a, b) => {
+        switch (mode) {
+          case 'price-desc':
+            return num(b, 'data-monthly') - num(a, 'data-monthly');
+          case 'ram-asc':
+            return num(a, 'data-ram') - num(b, 'data-ram') || num(a, 'data-monthly') - num(b, 'data-monthly');
+          case 'rating-desc':
+            return num(b, 'data-rating') - num(a, 'data-rating') || num(a, 'data-monthly') - num(b, 'data-monthly');
+          default:
+            return num(a, 'data-monthly') - num(b, 'data-monthly');
+        }
+      });
+
+      rows.forEach((row) => tbody?.appendChild(row));
+    };
+
+    tierBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activeRam = btn.getAttribute('data-ram') || 'all';
+        tierBtns.forEach((b) => {
+          const on = b === btn;
+          b.className = on
+            ? 'tier-btn rounded-lg bg-brand-600 px-3 py-1.5 text-[13px] font-semibold text-white transition-colors'
+            : 'tier-btn rounded-lg bg-white px-3 py-1.5 text-[13px] font-medium text-ink-600 ring-1 ring-line transition-colors hover:bg-brand-50';
+        });
+        applyFilter();
+      });
+    });
+
+    sortSelect?.addEventListener('change', applySort);
+    applySort();
+    applyFilter();
+  }
+</script>

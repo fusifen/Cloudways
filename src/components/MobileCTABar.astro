@@ -1,0 +1,72 @@
+---
+/**
+ * 移动端底部悬浮转化条
+ * - 滚动超过 700px 后出现
+ * - 用户可手动关闭（本次会话内不再出现）
+ */
+import AffiliateButton from './AffiliateButton.astro';
+import Icon from './Icon.astro';
+
+interface Props {
+  label?: string;
+  hint?: string;
+}
+
+const { label = '免费试用 Cloudways', hint = '无需信用卡 · 5 家云厂商任选' } = Astro.props;
+---
+
+<div
+  id="mobile-cta"
+  class="fixed inset-x-0 bottom-0 z-40 translate-y-full border-t border-line bg-white/95 px-4 py-3 shadow-[0_-8px_24px_-12px_rgba(11,18,32,0.25)] backdrop-blur transition-transform duration-300 lg:hidden"
+  role="complementary"
+  aria-label="推荐方案"
+>
+  <div class="flex items-center gap-3">
+    <div class="min-w-0 flex-1">
+      <p class="truncate text-[13px] font-semibold text-ink-900">{label}</p>
+      <p class="truncate text-[11px] text-ink-400">{hint}</p>
+    </div>
+    <AffiliateButton label="立即注册" variant="cta" size="sm" class="shrink-0" />
+    <button
+      type="button"
+      id="mobile-cta-close"
+      class="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-ink-400 hover:bg-surface-2"
+      aria-label="关闭推荐栏"
+    >
+      <Icon name="close" size={16} />
+    </button>
+  </div>
+</div>
+
+<script>
+  const bar = document.getElementById('mobile-cta');
+  const closeBtn = document.getElementById('mobile-cta-close');
+  const KEY = 'cw-cta-dismissed';
+
+  if (bar) {
+    let dismissed = false;
+    try {
+      dismissed = sessionStorage.getItem(KEY) === '1';
+    } catch {
+      dismissed = false;
+    }
+
+    if (!dismissed) {
+      const onScroll = () => {
+        const show = window.scrollY > 700;
+        bar.style.transform = show ? 'translateY(0)' : 'translateY(100%)';
+      };
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+    }
+
+    closeBtn?.addEventListener('click', () => {
+      bar.style.transform = 'translateY(100%)';
+      try {
+        sessionStorage.setItem(KEY, '1');
+      } catch {
+        /* ignore */
+      }
+    });
+  }
+</script>

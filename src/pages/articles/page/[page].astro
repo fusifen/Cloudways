@@ -1,0 +1,43 @@
+---
+import ArticleIndex from '../../../components/ArticleIndex.astro';
+import {
+  countByCategory,
+  getPublishedArticles,
+  paginateItems,
+  totalPagesFor,
+} from '../../../lib/articles';
+
+export async function getStaticPaths() {
+  const all = await getPublishedArticles();
+  const total = totalPagesFor(all.length);
+  // 第 1 页由 /articles/ 承担
+  return Array.from({ length: total }, (_, i) => i + 1)
+    .filter((p) => p > 1)
+    .map((p) => ({ params: { page: String(p) } }));
+}
+
+const currentPage = Number(Astro.params.page);
+const all = await getPublishedArticles();
+const { items, totalPages } = paginateItems(all, currentPage);
+const counts = countByCategory(all);
+
+const crumbs = [
+  { label: '首页', href: '/' },
+  { label: '文章教程', href: '/articles/' },
+  { label: `第 ${currentPage} 页` },
+];
+---
+
+<ArticleIndex
+  title={`Cloudways 文章教程与评测 — 第 ${currentPage} 页`}
+  description={`Cloudways 中文内容库第 ${currentPage} 页，共 ${all.length} 篇实测文章。覆盖教程、评测、对比、优惠、搬家与常见问题。`}
+  path={`/articles/page/${currentPage}/`}
+  items={items}
+  allArticles={all}
+  total={all.length}
+  currentPage={currentPage}
+  totalPages={totalPages}
+  baseUrl="/articles/"
+  crumbs={crumbs}
+  counts={counts}
+/>

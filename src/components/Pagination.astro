@@ -1,0 +1,91 @@
+---
+import Icon from './Icon.astro';
+
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  /** 生成第 n 页的链接 */
+  baseUrl: string;
+  /** 每页链接格式，默认 /page/N/ ；首页为 baseUrl 本身 */
+  pagePattern?: (page: number) => string;
+}
+
+const { currentPage, totalPages, baseUrl, pagePattern } = Astro.props;
+
+const hrefFor = (page: number) => {
+  if (pagePattern) return pagePattern(page);
+  return page === 1 ? baseUrl : `${baseUrl.replace(/\/$/, '')}/page/${page}/`;
+};
+
+// 生成页码窗口：1 … 4 5 6 … 10
+const windowSize = 2;
+const pages: (number | 'gap')[] = [];
+for (let p = 1; p <= totalPages; p++) {
+  if (p === 1 || p === totalPages || Math.abs(p - currentPage) <= windowSize) {
+    pages.push(p);
+  } else if (pages[pages.length - 1] !== 'gap') {
+    pages.push('gap');
+  }
+}
+---
+
+{
+  totalPages > 1 && (
+    <nav aria-label="分页导航" class="mt-10 flex items-center justify-center gap-1.5">
+      {currentPage > 1 ? (
+        <a
+          href={hrefFor(currentPage - 1)}
+          class="btn btn-ghost px-3"
+          rel="prev"
+          aria-label="上一页"
+        >
+          <Icon name="chevronRight" size={16} class="rotate-180" />
+          上一页
+        </a>
+      ) : (
+        <span class="btn btn-ghost cursor-not-allowed px-3 opacity-40">
+          <Icon name="chevronRight" size={16} class="rotate-180" />
+          上一页
+        </span>
+      )}
+
+      <div class="mx-1 flex items-center gap-1">
+        {pages.map((p) =>
+          p === 'gap' ? (
+            <span class="px-1.5 text-sm text-ink-400">…</span>
+          ) : (
+            <a
+              href={hrefFor(p)}
+              class:list={[
+                'grid h-9 min-w-9 place-items-center rounded-lg px-2.5 text-sm font-medium transition-colors',
+                p === currentPage
+                  ? 'bg-brand-600 text-white'
+                  : 'text-ink-600 hover:bg-surface-2 hover:text-ink-900',
+              ]}
+              aria-current={p === currentPage ? 'page' : undefined}
+            >
+              {p}
+            </a>
+          ),
+        )}
+      </div>
+
+      {currentPage < totalPages ? (
+        <a
+          href={hrefFor(currentPage + 1)}
+          class="btn btn-ghost px-3"
+          rel="next"
+          aria-label="下一页"
+        >
+          下一页
+          <Icon name="chevronRight" size={16} />
+        </a>
+      ) : (
+        <span class="btn btn-ghost cursor-not-allowed px-3 opacity-40">
+          下一页
+          <Icon name="chevronRight" size={16} />
+        </span>
+      )}
+    </nav>
+  )
+}

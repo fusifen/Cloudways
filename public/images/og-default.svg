@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Cloudways 中文指南">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e3a8a"/>
+      <stop offset="0.55" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#0d9488"/>
+    </linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <circle cx="1040" cy="110" r="220" fill="#ffffff" fill-opacity="0.07"/>
+  <circle cx="120" cy="580" r="170" fill="#ffffff" fill-opacity="0.06"/>
+
+  <rect x="96" y="112" width="76" height="76" rx="20" fill="#ffffff" fill-opacity="0.16"/>
+  <path d="M150 130 L118 168 H140 L136 194 L168 154 H146 Z" fill="#ffffff"/>
+
+  <text x="96" y="272" font-family="-apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif" font-size="72" font-weight="800" fill="#ffffff">Cloudways 中文指南</text>
+  <text x="96" y="342" font-family="-apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif" font-size="30" font-weight="500"
+        fill="#ffffff" fill-opacity="0.88">托管云主机评测 · 价格对比 · 实战教程</text>
+
+  <g font-family="-apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif" font-size="24" font-weight="600" fill="#ffffff" fill-opacity="0.92">
+    <rect x="96" y="410" width="200" height="52" rx="26" fill="#ffffff" fill-opacity="0.14"/>
+    <text x="126" y="444">5 家云厂商</text>
+    <rect x="316" y="410" width="212" height="52" rx="26" fill="#ffffff" fill-opacity="0.14"/>
+    <text x="346" y="444">20+ 全球机房</text>
+    <rect x="548" y="410" width="228" height="52" rx="26" fill="#ffffff" fill-opacity="0.14"/>
+    <text x="578" y="444">实测性能数据</text>
+  </g>
+
+  <text x="96" y="546" font-family="-apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif" font-size="24" font-weight="500"
+        fill="#ffffff" fill-opacity="0.7">cloudways-guide.com</text>
+</svg>

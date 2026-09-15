@@ -7,14 +7,28 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "predev": "node scripts/sync-cms.mjs",
     "build": "astro build",
+    "prebuild": "node scripts/sync-cms.mjs",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "gen:assets": "node scripts/generate-assets.mjs",
+    "gen:articles": "node scripts/generate-articles.mjs",
+    "articles:list": "node scripts/generate-articles.mjs --list",
+    "cms:sync": "node scripts/sync-cms.mjs",
+    "cms:check": "node scripts/check-cms-sync.mjs",
+    "check:links": "node scripts/check-links.mjs"
   },
   "dependencies": {
-    "astro": "^7.3.2"
+    "@astrojs/sitemap": "^3.7.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.3.2",
+    "tailwindcss": "^4.3.3"
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "devDependencies": {
+    "@sveltia/cms": "^0.212.2"
   }
 }

@@ -1,0 +1,61 @@
+---
+/**
+ * 全站转化按钮 —— 所有对外链接都必须经过这里
+ * 自动注入推广 ID，并统一 utm 参数与 rel 属性
+ */
+import { affiliateUrl, CLOUDWAYS } from '../consts';
+import Icon from './Icon.astro';
+
+interface Props {
+  /** Cloudways 站内路径，默认注册页 */
+  path?: string;
+  label?: string;
+  /** primary | cta | ghost | link */
+  variant?: 'primary' | 'cta' | 'ghost' | 'link';
+  size?: 'sm' | 'md' | 'lg';
+  block?: boolean;
+  /** 是否显示外链图标 */
+  showIcon?: boolean;
+  /** 附加追踪参数 */
+  params?: Record<string, string>;
+  class?: string;
+}
+
+const {
+  path = CLOUDWAYS.signup,
+  label = '免费试用 Cloudways',
+  variant = 'cta',
+  size = 'md',
+  block = false,
+  showIcon = true,
+  params,
+  class: className = '',
+} = Astro.props;
+
+const href = affiliateUrl(path, { params });
+
+const sizeClass =
+  size === 'lg' ? 'text-base px-6 py-3.5' : size === 'sm' ? 'text-sm px-3.5 py-2' : '';
+
+const variantClass =
+  variant === 'primary'
+    ? 'btn btn-primary'
+    : variant === 'ghost'
+      ? 'btn btn-ghost'
+      : variant === 'link'
+        ? 'inline-flex items-center gap-1 font-semibold text-brand-600 hover:text-brand-700'
+        : 'btn btn-cta';
+---
+
+<a
+  href={href}
+  class:list={[variant !== 'link' && 'btn', variantClass, sizeClass, block && 'w-full', className]}
+  target="_blank"
+  rel="sponsored nofollow noopener"
+  data-affiliate="cloudways"
+  data-cta-path={path}
+>
+  {label}
+  {showIcon && variant !== 'link' && <Icon name="arrowUpRight" size={16} />}
+  {showIcon && variant === 'link' && <Icon name="arrowRight" size={15} />}
+</a>

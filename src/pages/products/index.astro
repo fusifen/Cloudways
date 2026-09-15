@@ -1,0 +1,163 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import ProductComparisonTable from '../../components/ProductComparisonTable.astro';
+import AffiliateButton from '../../components/AffiliateButton.astro';
+import Icon from '../../components/Icon.astro';
+import { HOSTING_FEATURES, PROVIDERS } from '../../consts';
+import { getSortedProducts } from '../../lib/articles';
+import { breadcrumbSchema, itemListSchema } from '../../lib/schema';
+
+const products = await getSortedProducts();
+const crumbs = [
+  { label: '首页', href: '/' },
+  { label: '产品与价格' },
+];
+
+const totalPlans = products.reduce((n, p) => n + p.data.plans.length, 0);
+const totalDc = products.reduce((n, p) => n + p.data.datacenters.length, 0);
+---
+
+<BaseLayout
+  title="Cloudways 全部云厂商产品与价格"
+  description={`Cloudways 支持的 ${products.length} 家底层云厂商完整产品线：${products.map((p) => p.data.name).join('、')}。共 ${totalPlans} 个配置档位、${totalDc} 个全球机房，附价格与适用场景。`}
+  path="/products/"
+  keywords={['Cloudways 产品', 'Cloudways 云厂商', '托管云主机价格', 'Cloudways 配置']}
+  schemas={[
+    breadcrumbSchema(crumbs),
+    itemListSchema(
+      products.map((p) => ({ name: `Cloudways ${p.data.name}`, url: `/products/${p.id}/` })),
+      'Cloudways 底层云厂商',
+    ),
+  ]}
+  width="wide"
+>
+  <Breadcrumbs items={crumbs} />
+
+  <header class="mt-6 max-w-3xl">
+    <span class="chip border border-brand-200 bg-brand-50 text-brand-700">
+      <Icon name="server" size={13} />
+      {products.length} 家厂商 · {totalPlans} 个档位 · {totalDc} 个机房
+    </span>
+    <h1 class="mt-4 text-3xl font-bold tracking-tight sm:text-[2.4rem]">产品线与价格</h1>
+    <p class="mt-4 text-[17px] leading-relaxed text-ink-500">
+      Cloudways 本身不提供物理服务器，而是把 DigitalOcean、AWS、Google Cloud、Linode、Vultr
+      五家 IaaS 供应商整合进同一个托管面板。你的选择分成两步：<strong>先选底层云厂商</strong>（决定机房位置与价格基线），
+      <strong>再选配置档位</strong>（决定能扛多少流量）。下面按厂商逐个拆开。
+    </p>
+  </header>
+
+  <!-- 厂商卡片 -->
+  <section class="mt-10" aria-labelledby="list-heading">
+    <h2 id="list-heading" class="sr-only">云厂商列表</h2>
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {products.map((product) => <ProductCard product={product} />)}
+    </div>
+  </section>
+
+  <!-- 全量对比 -->
+  <section class="mt-16" aria-labelledby="table-heading">
+    <h2 id="table-heading" class="text-2xl font-bold tracking-tight">全部档位对比</h2>
+    <p class="mt-2 text-[15px] text-ink-500">
+      共 {totalPlans} 个档位。可按内存筛选、按月费排序。
+    </p>
+    <ProductComparisonTable products={products} class="mt-6" />
+  </section>
+
+  <!-- 托管能力 -->
+  <section class="mt-16" aria-labelledby="hosting-heading">
+    <h2 id="hosting-heading" class="text-2xl font-bold tracking-tight">
+      无论选哪家，这些能力都包含
+    </h2>
+    <p class="mt-2 text-[15px] text-ink-500">
+      底层厂商只决定硬件与机房位置，托管能力由 Cloudways 统一提供。
+    </p>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        HOSTING_FEATURES.map((feature) => (
+          <div class="flex gap-3.5 rounded-xl border border-line bg-white p-4">
+            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600">
+              <Icon name={feature.icon} size={17} />
+            </span>
+            <div>
+              <h3 class="text-[15px] font-bold text-ink-900">{feature.title}</h3>
+              <p class="mt-1 text-[13.5px] leading-relaxed text-ink-500">{feature.desc}</p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- 选择建议 -->
+  <section class="mt-16" aria-labelledby="guide-heading">
+    <h2 id="guide-heading" class="text-2xl font-bold tracking-tight">怎么选：一张速查表</h2>
+    <div class="mt-6 overflow-hidden rounded-2xl border border-line bg-white">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="border-b border-line bg-surface text-left text-[13px] text-ink-500">
+            <th scope="col" class="px-4 py-3 font-semibold">你的情况</th>
+            <th scope="col" class="px-4 py-3 font-semibold">推荐厂商</th>
+            <th scope="col" class="px-4 py-3 font-semibold">理由</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            [
+              {
+                need: '第一次用，预算优先',
+                pick: 'DigitalOcean',
+                why: '14 美元起，流量包给得足，机房覆盖亚太',
+              },
+              {
+                need: '用户主要在中国大陆',
+                pick: 'Vultr 或 DigitalOcean',
+                why: '东京 / 大阪 / 首尔 / 新加坡节点，延迟最低',
+              },
+              {
+                need: '动态站点、后台卡顿',
+                pick: 'Vultr 高频档',
+                why: '高主频 CPU + NVMe，单核性能更强',
+              },
+              {
+                need: '需要合规 / DPA',
+                pick: 'Amazon AWS',
+                why: '可签数据处理协议，区域最多',
+              },
+              {
+                need: '用户跨亚太与欧美',
+                pick: 'Google Cloud',
+                why: 'Premium Tier 骨干网，跨境抖动最小',
+              },
+              {
+                need: '面向欧美、长期稳定',
+                pick: 'Linode (Akamai)',
+                why: '与 DO 同价，磁盘 IO 一致性好',
+              },
+            ].map((row) => (
+              <tr class="border-b border-line/70 last:border-0 hover:bg-surface">
+                <td class="px-4 py-3.5 font-medium text-ink-800">{row.need}</td>
+                <td class="px-4 py-3.5 font-semibold text-brand-700">{row.pick}</td>
+                <td class="px-4 py-3.5 text-ink-500">{row.why}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mt-14 rounded-2xl border border-brand-200 bg-brand-50/60 p-6 sm:p-8">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-ink-900">不确定选哪家？先用免费试用实测</h2>
+        <p class="mt-2 max-w-xl text-[14.5px] leading-relaxed text-ink-600">
+          Cloudways 按小时计费且提供免费试用，你可以同时开几台不同厂商的实例跑一周，
+          用真实数据决定，成本不到 20 美元。
+        </p>
+      </div>
+      <AffiliateButton label="免费试用 Cloudways" variant="cta" size="lg" class="shrink-0" />
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,61 @@
+---
+import Icon from './Icon.astro';
+
+interface Props {
+  /** compact 用于文章顶部，full 用于独立页面 */
+  variant?: 'compact' | 'full';
+  class?: string;
+}
+
+const { variant = 'compact', class: className = '' } = Astro.props;
+---
+
+{
+  variant === 'compact' ? (
+    <aside
+      class:list={[
+        'flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-[13px] leading-relaxed text-amber-900',
+        className,
+      ]}
+    >
+      <Icon name="info" size={16} class="mt-0.5 shrink-0 text-amber-600" />
+      <p>
+        <strong>推广披露：</strong>本文含 Cloudways 联盟链接。通过链接注册我们可能获得佣金，
+        不影响你的支付价格，也不影响评测结论。
+        <a href="/affiliate-disclosure/" class="ml-1 font-medium underline">
+          详情
+        </a>
+      </p>
+    </aside>
+  ) : (
+    <div class:list={['card p-6', className]}>
+      <h2 class="flex items-center gap-2 text-lg font-bold">
+        <Icon name="shieldCheck" size={20} class="text-brand-600" />
+        推广声明与编辑独立性
+      </h2>
+      <div class="mt-4 space-y-4 text-sm leading-relaxed text-ink-600">
+        <p>
+          本站是一个<strong>独立运营</strong>的 Cloudways 使用经验分享站点。我们与
+          Cloudways 官方不存在雇佣或从属关系，也未接受其内容审核要求。
+        </p>
+        <p>
+          本站内容中出现的 Cloudways 链接均为<strong>联盟推广链接</strong>（Affiliate Link）。
+          当你通过这些链接注册并产生消费时，Cloudways 会向我们支付一笔佣金。这笔佣金
+          <strong>完全由 Cloudways 承担，不会增加你的任何支出</strong> —— 你支付的价格与直接访问官网完全一致。
+        </p>
+        <p>这笔收入用于支付本站的服务器与域名成本，让我们能够持续产出免费内容。作为交换，我们承诺：</p>
+        <ul class="ml-5 list-disc space-y-1.5">
+          <li>评测数据来自实测，不因佣金高低调整结论</li>
+          <li>明确指出产品的缺点与不适用场景</li>
+          <li>当竞品更适合某类需求时，如实推荐竞品</li>
+          <li>不伪造优惠力度，不承诺无法兑现的折扣</li>
+        </ul>
+        <p class="rounded-lg bg-surface px-4 py-3 text-[13px] text-ink-500">
+          如果你对本站的推广关系有任何疑问，欢迎通过
+          <a href="/about/" class="font-medium text-brand-600 hover:underline">关于页面</a>
+          提供的方式联系我们。
+        </p>
+      </div>
+    </div>
+  )
+}

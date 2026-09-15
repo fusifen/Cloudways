@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AffiliateButton from '../components/AffiliateButton.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import Icon from '../components/Icon.astro';
+import { NAV_LINKS } from '../consts';
+import { getPublishedArticles } from '../lib/articles';
+
+const articles = await getPublishedArticles();
+const suggestions = articles.slice(0, 3);
+---
+
+<BaseLayout
+  title="页面不存在"
+  description="你访问的页面不存在或已被移动。可以从下面的入口继续浏览 Cloudways 产品、价格与教程内容。"
+  path="/404/"
+  noindex
+  showMobileCta={false}
+  width="default"
+>
+  <div class="flex flex-col items-center py-16 text-center">
+    <span
+      class="grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-3xl font-bold text-brand-600"
+    >
+      404
+    </span>
+    <h1 class="mt-6 text-3xl font-bold tracking-tight">这个页面不存在</h1>
+    <p class="mt-3 max-w-md text-[15px] leading-relaxed text-ink-500">
+      链接可能已经失效，或者地址输错了。下面的入口或许能帮你找到需要的内容。
+    </p>
+
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-2.5">
+      {
+        NAV_LINKS.map((link) => (
+          <a href={link.href} class="btn btn-ghost">
+            {link.label}
+          </a>
+        ))
+      }
+    </div>
+
+    <div class="mt-8">
+      <AffiliateButton label="免费试用 Cloudways" variant="cta" size="lg" />
+    </div>
+  </div>
+
+  <section class="mt-8" aria-labelledby="suggest-heading">
+    <h2 id="suggest-heading" class="flex items-center gap-2.5 text-xl font-bold">
+      <span class="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600">
+        <Icon name="bookOpen" size={17} />
+      </span>
+      或许你会感兴趣
+    </h2>
+    <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {suggestions.map((article) => <ArticleCard article={article} />)}
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,59 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import Icon from '../../components/Icon.astro';
+import { collectTags, getPublishedArticles } from '../../lib/articles';
+import { breadcrumbSchema } from '../../lib/schema';
+
+const all = await getPublishedArticles();
+const tags = collectTags(all);
+const crumbs = [{ label: '首页', href: '/' }, { label: '标签' }];
+const maxCount = tags[0]?.count ?? 1;
+---
+
+<BaseLayout
+  title="全部标签"
+  description={`Cloudways 中文内容库的全部 ${tags.length} 个标签，覆盖云厂商、性能优化、计费与迁移等主题。`}
+  path="/tags/"
+  noindex
+  schemas={[breadcrumbSchema(crumbs)]}
+  width="default"
+>
+  <Breadcrumbs items={crumbs} />
+
+  <header class="mt-6 max-w-3xl">
+    <h1 class="text-3xl font-bold tracking-tight sm:text-[2.4rem]">全部标签</h1>
+    <p class="mt-4 text-[17px] leading-relaxed text-ink-500">
+      共 {tags.length} 个标签。字号越大表示相关文章越多。
+    </p>
+  </header>
+
+  <div class="mt-10 flex flex-wrap items-center gap-x-4 gap-y-3">
+    {
+      tags.map((t) => {
+        const scale = 0.85 + (t.count / maxCount) * 0.5;
+        return (
+          <a
+            href={`/tags/${encodeURIComponent(t.tag)}/`}
+            class="inline-flex items-baseline gap-1.5 text-ink-600 transition-colors hover:text-brand-600"
+            style={`font-size:${scale}rem`}
+          >
+            #{t.tag}
+            <span class="text-[0.75em] text-ink-400">{t.count}</span>
+          </a>
+        );
+      })
+    }
+  </div>
+
+  <div class="mt-12 flex flex-wrap gap-3">
+    <a href="/articles/" class="btn btn-ghost">
+      <Icon name="bookOpen" size={16} />
+      查看全部文章
+    </a>
+    <a href="/categories/" class="btn btn-ghost">
+      <Icon name="filter" size={16} />
+      按分类浏览
+    </a>
+  </div>
+</BaseLayout>

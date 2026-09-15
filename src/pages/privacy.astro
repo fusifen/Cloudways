@@ -1,0 +1,105 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { SITE } from '../consts';
+import { breadcrumbSchema } from '../lib/schema';
+
+const crumbs = [{ label: '首页', href: '/' }, { label: '隐私政策' }];
+
+const updated = '2026-09-01';
+---
+
+<BaseLayout
+  title="隐私政策"
+  description={`${SITE.name}的隐私政策：我们收集哪些数据、如何使用 Cookie 与联盟追踪参数、以及你可以如何行使自己的权利。`}
+  path="/privacy/"
+  noindex
+  schemas={[breadcrumbSchema(crumbs)]}
+  width="narrow"
+  showMobileCta={false}
+>
+  <Breadcrumbs items={crumbs} />
+
+  <header class="mt-6">
+    <h1 class="text-3xl font-bold tracking-tight">隐私政策</h1>
+    <p class="mt-3 text-[14px] text-ink-400">最后更新：{updated}</p>
+  </header>
+
+  <div class="prose-custom mt-8">
+    <p>
+      本页说明 {SITE.name}（以下称「本站」）在你访问期间如何处理与隐私相关的数据。
+      我们尽量把政策写得可读，而不是用法律术语堆砌。
+    </p>
+
+    <h2>我们收集哪些信息</h2>
+    <p>本站是一个静态内容网站，<strong>不提供账号注册，也不收集你的个人信息</strong>。具体来说：</p>
+    <ul>
+      <li>我们不要求你注册、登录或提交任何个人信息即可阅读全部内容</li>
+      <li>我们不存储你的姓名、邮箱、电话或支付信息</li>
+      <li>服务器访问日志可能包含 IP 地址、浏览器类型与访问时间，用于安全防护与故障排查</li>
+    </ul>
+
+    <h2>Cookie 与追踪技术</h2>
+    <p>本站自身不设置用于广告投放的追踪 Cookie。但以下第三方可能在你访问时设置 Cookie：</p>
+    <ul>
+      <li>
+        <strong>联盟追踪</strong>：当你点击站内指向 Cloudways 的推广链接时，
+        Cloudways 及其联盟网络会设置 Cookie，用于记录推荐来源并在你注册后归因佣金。
+        这是联盟营销的标准机制。
+      </li>
+      <li>
+        <strong>网站分析</strong>：本站可能使用注重隐私的分析工具（如不记录个人标识的访问统计），
+        用于了解哪些内容更有帮助。
+      </li>
+    </ul>
+    <p>
+      你可以在浏览器设置中拒绝或删除 Cookie。拒绝联盟 Cookie 不会影响你访问官网、
+      注册或获得任何优惠 —— 价格与直接访问完全一致。
+    </p>
+
+    <h2>推广链接与查询参数</h2>
+    <p>
+      站内所有指向 Cloudways 的链接都带有推广追踪参数（如 <code>id</code>、
+      <code>utm_source</code>）。这些参数用于标识推荐来源。
+      如果你不希望被追踪，可以在点击前手动删除这些参数，访问结果与价格不受影响。
+      详情见推广声明页面。
+    </p>
+
+    <h2>第三方链接</h2>
+    <p>
+      本站包含指向 Cloudways 官网及其他第三方网站的链接。这些网站有各自的隐私政策，
+      本站无法控制其内容与数据处理方式。建议你在提交任何个人信息前，先阅读目标网站的隐私政策。
+    </p>
+
+    <h2>数据安全</h2>
+    <p>
+      本站为静态站点，不存储用户数据，因此不存在用户数据库泄露的风险。
+      我们通过 HTTPS 加密传输，并定期更新依赖以修复已知安全漏洞。
+    </p>
+
+    <h2>未成年人</h2>
+    <p>
+      本站内容面向网站建设与云主机选型的技术决策者，不针对未成年人设计，
+      也不会有意收集未成年人的个人信息。
+    </p>
+
+    <h2>你的权利</h2>
+    <p>
+      由于本站不收集可识别个人身份的信息，通常不存在需要你行使访问、更正或删除权的数据。
+      如果你认为本站持有你的相关信息，或对隐私处理有疑问，欢迎来信
+      <strong>{SITE.email}</strong>，我们会在合理时间内回应。
+    </p>
+
+    <h2>政策变更</h2>
+    <p>
+      本政策可能因业务或法律要求调整。重大变更会在本页顶部更新「最后更新」日期。
+      建议你在关注本站内容时偶尔回看本页。
+    </p>
+
+    <hr />
+
+    <p class="text-[14px] text-ink-500">
+      如对本政策有疑问，请联系 <strong>{SITE.email}</strong>。
+    </p>
+  </div>
+</BaseLayout>

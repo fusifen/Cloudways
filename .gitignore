@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# 本地验证截图（用于开发期核对渲染效果，不进仓库）
+.verify/

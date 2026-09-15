@@ -1,0 +1,84 @@
+---
+/**
+ * 单一厂商的档位价格表（用于产品详情页）
+ */
+import { affiliateUrl } from '../consts';
+import { formatPrice, type Product } from '../lib/articles';
+import Icon from './Icon.astro';
+
+interface Props {
+  product: Product;
+}
+
+const { product } = Astro.props;
+const d = product.data;
+const plans = [...d.plans].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
+---
+
+<div class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[720px] border-collapse text-sm">
+      <caption class="sr-only">{d.name} 各档位配置与价格</caption>
+      <thead>
+        <tr class="border-b border-line bg-surface text-left text-[13px] text-ink-500">
+          <th scope="col" class="px-4 py-3 font-semibold">档位</th>
+          <th scope="col" class="px-4 py-3 font-semibold">vCPU</th>
+          <th scope="col" class="px-4 py-3 font-semibold">内存</th>
+          <th scope="col" class="px-4 py-3 font-semibold">存储</th>
+          <th scope="col" class="px-4 py-3 font-semibold">月流量</th>
+          <th scope="col" class="px-4 py-3 text-right font-semibold">小时价</th>
+          <th scope="col" class="px-4 py-3 text-right font-semibold">月费</th>
+          <th scope="col" class="px-4 py-3 text-right font-semibold">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          plans.map((plan) => (
+            <tr
+              class:list={[
+                'border-b border-line/70 last:border-0',
+                plan.popular ? 'bg-brand-50/50' : 'hover:bg-surface',
+              ]}
+            >
+              <td class="px-4 py-3.5">
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-ink-900">{plan.name}</span>
+                  {plan.popular && (
+                    <span class="chip bg-brand-600 text-white">主推</span>
+                  )}
+                </div>
+                {plan.bestFor && (
+                  <p class="mt-0.5 text-[12px] text-ink-400">{plan.bestFor}</p>
+                )}
+              </td>
+              <td class="px-4 py-3.5 tabular-nums text-ink-700">{plan.vcpu}</td>
+              <td class="px-4 py-3.5 tabular-nums text-ink-700">{plan.ram} GB</td>
+              <td class="px-4 py-3.5 tabular-nums text-ink-700">{plan.storage} GB</td>
+              <td class="px-4 py-3.5 tabular-nums text-ink-700">{plan.bandwidth} TB</td>
+              <td class="px-4 py-3.5 text-right tabular-nums text-ink-500">
+                {formatPrice(plan.hourlyPrice, 3)}
+              </td>
+              <td class="px-4 py-3.5 text-right">
+                <span class="text-base font-bold tabular-nums text-ink-900">
+                  {formatPrice(plan.monthlyPrice, plan.monthlyPrice < 10 ? 2 : 0)}
+                </span>
+              </td>
+              <td class="px-4 py-3.5 text-right">
+                <a
+                  href={affiliateUrl(d.ctaPath, { params: { plan: plan.sku ?? plan.name } })}
+                  class="btn btn-primary px-3 py-1.5 text-[13px]"
+                  target="_blank"
+                  rel="sponsored nofollow noopener"
+                  data-affiliate="cloudways"
+                >
+                  部署
+                  <Icon name="arrowUpRight" size={14} />
+                </a>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,238 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import AffiliateButton from '../components/AffiliateButton.astro';
+import Icon from '../components/Icon.astro';
+import { affiliateUrl, CLOUDWAYS, TRUST_POINTS } from '../consts';
+import { getPublishedArticles } from '../lib/articles';
+import { breadcrumbSchema, couponSchema } from '../lib/schema';
+
+const articles = await getPublishedArticles();
+const couponArticles = articles.filter((a) => a.data.category === 'coupon');
+const crumbs = [{ label: '首页', href: '/' }, { label: '最新优惠' }];
+
+const signupLink = affiliateUrl(CLOUDWAYS.signup);
+
+// 优惠体系说明（Cloudways 没有公开优惠码输入框）
+const channels = [
+  {
+    icon: 'arrowUpRight',
+    title: '推广链接注册',
+    desc: '通过有效推广链接进入官网注册，优惠自动绑定账户，无需输入任何码。',
+    active: true,
+  },
+  {
+    icon: 'sparkles',
+    title: '官方限时活动',
+    desc: '官方不定期推出首笔消费折扣或赠送额度，力度随活动周期变化。',
+    active: true,
+  },
+  {
+    icon: 'calendar',
+    title: '年付方案折扣',
+    desc: '确定长期使用同一档位时，年付通常有 10%–20% 折扣，但灵活性下降。',
+    active: true,
+  },
+  {
+    icon: 'close',
+    title: '公开优惠码',
+    desc: 'Cloudways 结算页没有优惠码输入框。网上流传的「优惠码」基本无效。',
+    active: false,
+  },
+];
+
+const traps = [
+  '要求你先填问卷或下载文件才能拿到码 —— 典型引流套路',
+  '折扣幅度离谱（5 折、买一送一）—— 官方几乎不会有这种力度',
+  '页面没有更新日期，或日期显示为往年 —— 大概率已过期',
+  '要求你提供账号密码或支付信息 —— 直接是诈骗',
+];
+---
+
+<BaseLayout
+  title="Cloudways 最新优惠与折扣"
+  description="Cloudways 官方折扣渠道汇总：推广链接注册、限时活动、年付方案与免费试用规则，并说明为什么网上流传的优惠码大多无效。"
+  path="/coupons/"
+  keywords={['Cloudways 优惠', 'Cloudways 优惠码', 'Cloudways 折扣', 'Cloudways 免费试用']}
+  schemas={[
+    breadcrumbSchema(crumbs),
+    couponSchema('NO_CODE', 'Cloudways 免费试用与注册优惠', signupLink),
+  ]}
+  width="wide"
+>
+  <Breadcrumbs items={crumbs} />
+
+  <header class="mt-6 max-w-3xl">
+    <span class="chip border border-amber-200 bg-amber-50 text-amber-700">
+      <Icon name="dollar" size={13} />
+      优惠与省钱指南
+    </span>
+    <h1 class="mt-4 text-3xl font-bold tracking-tight sm:text-[2.4rem]">最新优惠</h1>
+    <p class="mt-4 text-[17px] leading-relaxed text-ink-500">
+      先讲一个反直觉的事实：<strong>Cloudways 没有优惠码输入框</strong>。
+      你在网上看到的「Cloudways 优惠码 7 折」页面，绝大多数是引流内容。
+      真正的折扣走的是另外三条路径。
+    </p>
+  </header>
+
+  <!-- 主优惠卡 -->
+  <section
+    class="mt-10 overflow-hidden rounded-3xl border border-brand-200 bg-gradient-to-br from-brand-600 to-brand-700 p-7 text-white sm:p-9"
+  >
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div class="max-w-2xl">
+        <span class="chip bg-white/15 text-white">
+          <Icon name="sparkles" size={13} />
+          当前可用
+        </span>
+        <h2 class="mt-4 text-2xl font-bold text-white sm:text-[1.75rem]">
+          无需信用卡免费试用 + 注册优惠
+        </h2>
+        <p class="mt-3 text-[15px] leading-relaxed text-brand-100">
+          通过下方链接进入官网注册，优惠会自动绑定到你的账户，不需要手动输入任何优惠码。
+          免费试用期内可完整使用面板全部功能，包括 Breeze 缓存、自动备份与 24/7 客服。
+        </p>
+        <ul class="mt-5 flex flex-wrap gap-x-6 gap-y-2">
+          {
+            TRUST_POINTS.map((point) => (
+              <li class="inline-flex items-center gap-2 text-[13.5px] text-brand-100">
+                <Icon name="check" size={15} class="text-accent-400" />
+                {point}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="shrink-0">
+        <AffiliateButton label="领取注册优惠" variant="cta" size="lg" />
+        <p class="mt-3 text-center text-[11.5px] text-brand-200">
+          优惠力度随官方活动变化，以结算页显示为准
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 折扣渠道 -->
+  <section class="mt-14" aria-labelledby="channel-heading">
+    <h2 id="channel-heading" class="text-2xl font-bold tracking-tight">折扣的四种可能来源</h2>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2">
+      {
+        channels.map((c) => (
+          <div
+            class:list={[
+              'card flex gap-4 p-5',
+              !c.active && 'border-rose-200 bg-rose-50/40',
+            ]}
+          >
+            <span
+              class:list={[
+                'grid h-10 w-10 shrink-0 place-items-center rounded-xl',
+                c.active ? 'bg-brand-50 text-brand-600' : 'bg-rose-100 text-rose-600',
+              ]}
+            >
+              <Icon name={c.icon} size={18} />
+            </span>
+            <div>
+              <h3 class="flex items-center gap-2 text-[15px] font-bold text-ink-900">
+                {c.title}
+                {!c.active && <span class="chip bg-rose-100 text-rose-700">无效</span>}
+              </h3>
+              <p class="mt-1.5 text-[13.5px] leading-relaxed text-ink-500">{c.desc}</p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- 试用清单 -->
+  <section class="mt-14" aria-labelledby="trial-heading">
+    <h2 id="trial-heading" class="text-2xl font-bold tracking-tight">
+      把免费试用期的价值用满
+    </h2>
+    <p class="mt-2 text-[15px] text-ink-500">
+      与其看别人的评测下结论，不如用真实环境跑一遍这五步。
+    </p>
+
+    <ol class="mt-6 space-y-4">
+      {
+        [
+          {
+            t: '部署一台 DigitalOcean 2GB 实例',
+            d: '选应用类型 WordPress，全程约 30 秒完成。',
+          },
+          {
+            t: '测一次「未开缓存」的性能基线',
+            d: '用 GTmetrix 或 WebPageTest 记录 TTFB 与完全加载时间，截图保存。',
+          },
+          {
+            t: '开启 Breeze 缓存后再测一次',
+            d: '对比两次数据。正常情况下 TTFB 会下降 70% 以上，这是最直观的价值证明。',
+          },
+          {
+            t: '上传真实站点备份试一次迁移',
+            d: '验证迁移流程与兼容性，避免正式搬家时才发现问题。',
+          },
+          {
+            t: '联系一次在线客服',
+            d: '提一个具体的技术问题，体验响应速度与专业程度。',
+          },
+        ].map((step, i) => (
+          <li class="card flex gap-4 p-5">
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-600 text-[13px] font-bold text-white">
+              {i + 1}
+            </span>
+            <div>
+              <h3 class="text-[15px] font-bold text-ink-900">{step.t}</h3>
+              <p class="mt-1.5 text-[13.5px] leading-relaxed text-ink-500">{step.d}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <!-- 假优惠识别 -->
+  <section class="mt-14" aria-labelledby="trap-heading">
+    <h2 id="trap-heading" class="text-2xl font-bold tracking-tight">识别假优惠的四个信号</h2>
+    <div class="mt-6 rounded-2xl border border-rose-200 bg-rose-50/50 p-6">
+      <ul class="space-y-3">
+        {
+          traps.map((trap) => (
+            <li class="flex items-start gap-3 text-[14.5px] text-ink-700">
+              <Icon name="close" size={16} class="mt-0.5 shrink-0 text-rose-500" />
+              {trap}
+            </li>
+          ))
+        }
+      </ul>
+      <p class="mt-5 rounded-xl bg-white px-4 py-3 text-[13.5px] font-medium text-ink-700">
+        判断标准很简单：<strong>任何需要「输入优惠码」的 Cloudways 折扣，基本都是无效的。</strong>
+      </p>
+    </div>
+  </section>
+
+  <!-- 优惠相关文章 -->
+  {
+    couponArticles.length > 0 && (
+      <section class="mt-14" aria-labelledby="coupon-articles">
+        <h2 id="coupon-articles" class="text-2xl font-bold tracking-tight">优惠与省钱文章</h2>
+        <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {couponArticles.map((article) => (
+            <ArticleCard article={article} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <section class="mt-14 rounded-2xl border border-line bg-white p-6 text-[13.5px] leading-relaxed text-ink-500">
+    <p>
+      <strong class="text-ink-700">说明：</strong>
+      本站不承诺任何具体折扣数值。Cloudways 的优惠力度随官方活动周期变化，
+      且可能随时调整或终止。下单前请以官网结算页面显示的最终价格为准。
+      本页所有按钮均为联盟推广链接，我们可能因此获得佣金，不影响你的支付价格。
+    </p>
+  </section>
+</BaseLayout>

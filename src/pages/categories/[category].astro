@@ -1,0 +1,40 @@
+---
+import ArticleIndex from '../../components/ArticleIndex.astro';
+import { CATEGORIES, CATEGORY_KEYS, isCategoryKey, type CategoryKey } from '../../consts';
+import { countByCategory, filterByCategory, getPublishedArticles, paginateItems } from '../../lib/articles';
+
+export async function getStaticPaths() {
+  return CATEGORY_KEYS.map((key) => ({ params: { category: key } }));
+}
+
+const key = Astro.params.category as string;
+const category: CategoryKey = isCategoryKey(key) ? key : 'tutorial';
+const cat = CATEGORIES[category];
+
+const all = await getPublishedArticles();
+const filtered = filterByCategory(all, category);
+const { items, currentPage, totalPages } = paginateItems(filtered, 1);
+const counts = countByCategory(all);
+
+const crumbs = [
+  { label: '首页', href: '/' },
+  { label: '文章教程', href: '/articles/' },
+  { label: cat.label },
+];
+---
+
+<ArticleIndex
+  title={`Cloudways ${cat.label}`}
+  description={`${cat.description}。当前分类共 ${filtered.length} 篇文章。`}
+  path={`/categories/${category}/`}
+  keywords={[`Cloudways ${cat.label}`, cat.label, 'Cloudways']}
+  items={items}
+  allArticles={all}
+  total={filtered.length}
+  currentPage={currentPage}
+  totalPages={totalPages}
+  baseUrl={`/categories/${category}/`}
+  activeCategory={category}
+  crumbs={crumbs}
+  counts={counts}
+/>

@@ -1,0 +1,103 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import AffiliateButton from '../../components/AffiliateButton.astro';
+import Icon from '../../components/Icon.astro';
+import { collectTags, filterByTag, getPublishedArticles } from '../../lib/articles';
+import { breadcrumbSchema, itemListSchema } from '../../lib/schema';
+
+export async function getStaticPaths() {
+  const all = await getPublishedArticles();
+  const tags = collectTags(all);
+  return tags.map((t) => ({
+    params: { tag: t.tag },
+    props: { tag: t.tag },
+  }));
+}
+
+const { tag } = Astro.props;
+const all = await getPublishedArticles();
+const articles = filterByTag(all, tag);
+const allTags = collectTags(all).slice(0, 16);
+
+const crumbs = [
+  { label: '首页', href: '/' },
+  { label: '标签', href: '/tags/' },
+  { label: tag },
+];
+---
+
+<BaseLayout
+  title={`#${tag} 相关文章`}
+  description={`与「${tag}」相关的 Cloudways 文章，共 ${articles.length} 篇。`}
+  path={`/tags/${encodeURIComponent(tag)}/`}
+  keywords={[tag, 'Cloudways', `Cloudways ${tag}`]}
+  schemas={[
+    breadcrumbSchema(crumbs),
+    itemListSchema(
+      articles.map((a) => ({ name: a.data.title, url: `/articles/${a.id}/` })),
+      `#${tag} 相关文章`,
+    ),
+  ]}
+  width="wide"
+>
+  <Breadcrumbs items={crumbs} />
+
+  <header class="mt-6 max-w-3xl">
+    <span class="chip border border-line bg-white text-ink-600">
+      <Icon name="tag" size={13} />
+      标签
+    </span>
+    <h1 class="mt-4 text-3xl font-bold tracking-tight sm:text-[2.4rem]">#{tag}</h1>
+    <p class="mt-4 text-[17px] leading-relaxed text-ink-500">
+      共 {articles.length} 篇相关文章。
+    </p>
+  </header>
+
+  <div class="mt-6 flex flex-wrap items-center gap-2 border-y border-line py-4">
+    <span class="text-[13px] font-medium text-ink-400">其他标签</span>
+    {
+      allTags
+        .filter((t) => t.tag !== tag)
+        .map((t) => (
+          <a
+            href={`/tags/${encodeURIComponent(t.tag)}/`}
+            class="chip bg-surface-2 text-ink-600 transition-colors hover:bg-brand-50 hover:text-brand-700"
+          >
+            #{t.tag}
+            <span class="text-ink-400">{t.count}</span>
+          </a>
+        ))
+    }
+  </div>
+
+  {
+    articles.length > 0 ? (
+      <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {articles.map((article) => (
+          <ArticleCard article={article} />
+        ))}
+      </div>
+    ) : (
+      <div class="card mt-6 p-12 text-center">
+        <p class="text-[15px] text-ink-500">这个标签下暂时没有文章。</p>
+        <a href="/articles/" class="btn btn-ghost mt-4">
+          查看全部文章
+        </a>
+      </div>
+    )
+  }
+
+  <section class="mt-14 rounded-2xl border border-brand-200 bg-brand-50/60 p-6 sm:p-8">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-ink-900">想直接上手试试？</h2>
+        <p class="mt-2 max-w-xl text-[14.5px] leading-relaxed text-ink-600">
+          Cloudways 提供无需信用卡的免费试用，按小时计费，随时可删。
+        </p>
+      </div>
+      <AffiliateButton label="免费试用 Cloudways" variant="cta" size="lg" class="shrink-0" />
+    </div>
+  </section>
+</BaseLayout>

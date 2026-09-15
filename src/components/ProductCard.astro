@@ -1,0 +1,112 @@
+---
+import { affiliateUrl, PROVIDERS, type ProviderKey } from '../consts';
+import { formatPrice, type Product } from '../lib/articles';
+import AffiliateButton from './AffiliateButton.astro';
+import Icon from './Icon.astro';
+import Rating from './Rating.astro';
+
+interface Props {
+  product: Product;
+  /** 是否显示前两个档位 */
+  showPlans?: boolean;
+  class?: string;
+}
+
+const { product, showPlans = true, class: className = '' } = Astro.props;
+const d = product.data;
+const meta = PROVIDERS[d.provider as ProviderKey];
+const cheapest = [...d.plans].sort((a, b) => a.monthlyPrice - b.monthlyPrice)[0];
+const href = `/products/${product.id}/`;
+---
+
+<article
+  class:list={[
+    'card group relative flex flex-col overflow-hidden transition-shadow hover:shadow-lift',
+    className,
+  ]}
+>
+  {
+    d.featured && (
+      <div
+        class="absolute right-4 top-4 z-10 rounded-full px-2.5 py-1 text-[11px] font-bold text-white shadow-sm"
+        style={`background:${d.brandColor}`}
+      >
+        推荐
+      </div>
+    )
+  }
+
+  <div class="flex flex-1 flex-col p-5">
+    <!-- 厂商头部 -->
+    <div class="flex items-center gap-3">
+      <span
+        class="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[15px] font-bold text-white"
+        style={`background:${d.brandColor}`}
+        aria-hidden="true"
+      >
+        {d.name.slice(0, 2).toUpperCase()}
+      </span>
+      <div class="min-w-0">
+        <h3 class="truncate text-[17px] font-bold text-ink-900">
+          <a href={href} class="hover:text-brand-700">{d.name}</a>
+        </h3>
+        <p class="truncate text-xs text-ink-400">{meta?.blurb.split('，')[0]}</p>
+      </div>
+    </div>
+
+    <p class="mt-3.5 line-clamp-2 text-sm leading-relaxed text-ink-500">{d.tagline}</p>
+
+    <div class="mt-3 flex items-center justify-between">
+      <Rating value={d.rating} />
+      <span class="text-xs text-ink-400">{d.datacenters.length} 个机房</span>
+    </div>
+
+    <!-- 价格 -->
+    <div class="mt-4 flex items-baseline gap-1.5 border-t border-line pt-4">
+      <span class="text-xs text-ink-400">起</span>
+      <span class="text-2xl font-bold tracking-tight text-ink-900">
+        {formatPrice(cheapest.monthlyPrice, 0)}
+      </span>
+      <span class="text-sm text-ink-400">/月</span>
+      <span class="ml-auto text-[11px] text-ink-400">
+        {formatPrice(cheapest.hourlyPrice, 3)}/小时
+      </span>
+    </div>
+
+    <!-- 档位速览 -->
+    {
+      showPlans && (
+        <ul class="mt-4 space-y-1.5">
+          {d.plans.slice(0, 3).map((plan) => (
+            <li class="flex items-center justify-between rounded-lg bg-surface px-3 py-2 text-[13px]">
+              <span class="flex items-center gap-2 text-ink-600">
+                <Icon name="cpu" size={13} class="text-ink-400" />
+                {plan.vcpu}C / {plan.ram}GB / {plan.storage}GB
+              </span>
+              <span class="font-semibold text-ink-800">{formatPrice(plan.monthlyPrice, 0)}</span>
+            </li>
+          ))}
+          {d.plans.length > 3 && (
+            <li class="pt-1 text-center text-xs text-ink-400">
+              另有 {d.plans.length - 3} 个档位
+            </li>
+          )}
+        </ul>
+      )
+    }
+
+    <div class="mt-5 flex items-center gap-2">
+      <AffiliateButton
+        path={d.ctaPath}
+        label="部署此方案"
+        variant="cta"
+        size="sm"
+        params={{ provider: d.provider }}
+        class="flex-1"
+      />
+      <a href={href} class="btn btn-ghost px-3" aria-label={`查看 ${d.name} 详情`}>
+        <Icon name="arrowRight" size={16} />
+      </a>
+    </div>
+  </div>
+</article>
