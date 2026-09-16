@@ -66,8 +66,8 @@ export const CLOUDWAYS = {
   migration: '/en/free-website-migration-service.php',
   /** Breeze WordPress 缓存插件 */
   breeze: '/en/free-wordpress-cache-plugin-breeze.php',
-  /** Cloudways 已无独立优惠页，回落首页 */
-  coupon: '/en/',
+  /** 优惠页（Cloudways 目前唯一真实存在的优惠页；promotions/deals/coupon.php 均为软 404） */
+  coupon: '/en/coupon-tak.php',
   /** 支持中心 */
   support: '/en/support.php',
 } as const;

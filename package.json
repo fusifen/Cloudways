@@ -7,9 +7,10 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "predev": "node scripts/sync-cms.mjs && node scripts/check-affiliate-links.mjs",
+    "predev": "node scripts/sync-cms.mjs && node scripts/check-affiliate-links.mjs --static",
     "build": "astro build",
-    "prebuild": "node scripts/sync-cms.mjs && node scripts/check-affiliate-links.mjs",
+    "prebuild": "node scripts/sync-cms.mjs && node scripts/check-affiliate-links.mjs --static",
+    "postbuild": "node scripts/check-affiliate-links.mjs --dist",
     "preview": "astro preview",
     "astro": "astro",
     "gen:assets": "node scripts/generate-assets.mjs",
@@ -18,7 +19,8 @@
     "cms:sync": "node scripts/sync-cms.mjs",
     "cms:check": "node scripts/check-cms-sync.mjs",
     "check:links": "node scripts/check-links.mjs",
-    "check:affiliate": "node scripts/check-affiliate-links.mjs"
+    "check:affiliate": "node scripts/check-affiliate-links.mjs",
+    "check:affiliate:live": "node scripts/check-affiliate-links.mjs --live"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",

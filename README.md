@@ -24,9 +24,11 @@ npm run dev                 # 启动开发服务器 http://localhost:4321
 生产构建与预览：
 
 ```bash
-npm run build               # 输出到 dist/
+npm run build               # 输出到 dist/（prebuild 查配置层，postbuild 查产物层）
 npm run preview             # 本地预览构建结果
 npm run check:links         # 站内链接体检（建议上线前跑）
+npm run check:affiliate     # 推广落地页：配置层 + 产物层
+npm run check:affiliate:live # 上面两项 + 联网实测每个落地页（建议上线前跑）
 npm run cms:check           # CMS 字段一致性校验
 ```
 
@@ -81,17 +83,38 @@ https://www.cloudways.com/en/?id=<你的ID>&utm_source=cloudways-guide&utm_mediu
 > | `/en/pricing.php#do` | ❌ 死片段，见下方说明 |
 >
 > 这类错误**构建期完全不报错**，页面照常生成、链接照常渲染，只有真人点下去才 404。
-> 因此做了四道防线：
+> 因此做了五道防线：
 >
 > 1. 路径只在 `src/consts.ts` 里定义（**不要在组件里硬编码**）：
 >    `CLOUDWAYS`（通用页面）+ `CLOUDWAYS_PROVIDER_PAGES`（各云厂商专属落地页）；
 > 2. `ctaPath` 的 Zod schema 用 `refine` 卡住白名单，写错直接构建失败；
 > 3. 再加一层 `refine` 检查 **ctaPath 与 provider 是否对应** —— 防止「把 Vultr 的页面
 >    配给 DigitalOcean」这种复制粘贴错误（跳错站比 404 更难被发现）；
-> 4. `npm run check:affiliate` 静态校验 + `npm run check:affiliate -- --live` 联网实测，
->    静态层已挂到 `prebuild`。
+> 4. `npm run check:affiliate` 扫**构建产物**：页面上真实渲染出来的外链必须都在白名单内
+>    且带推广 ID。这一层专抓组件里硬编码的路径 —— `SidebarCTA.astro` 就曾把一个失效
+>    路径写死在 prop 默认值里，绕过了前三道防线。已挂到 `postbuild`；
+> 5. `npm run check:affiliate:live` 联网实测，识别 Cloudways 的**软 404**。
 >
 > 新增落地页时：先确认页面真实存在，再写进 `src/consts.ts`，然后跑一次 `--live`。
+>
+> #### 软 404：Cloudways 的 404 页返回的是 HTTP 200
+>
+> 这是最容易骗过检查的一点 —— 请求 `/en/promotions.php` 拿到的是 `200`，
+> 但页面内容其实是它自己的 404 模板（`<title>Cloudways | 404</title>`）。
+> **只看状态码会把死链判成正常**，所以联网检查必须读响应体，匹配特征串
+> `slipped through a time portal` / `Cloudways | 404`。
+>
+> 实测记录（2026-09）：`/en/promotions.php`、`/en/deals.php`、`/en/coupon.php`
+> **全部是软 404**；只有 `/en/coupon-tak.php` 是真实存在的优惠页，因此
+> `CLOUDWAYS.coupon` 指向它，而不是回落到首页。
+>
+> #### 为什么联网检查走 curl 而不是 Node 的 fetch
+>
+> cloudways.com 在 Cloudflare 后面，会按 **TLS 指纹**拦截 Node 的握手 ——
+> 实测即使带上完整的浏览器请求头，也稳定返回 403，会让联网检查全部变成
+> 「无法判定」而失去意义。curl 的 TLS 指纹能正常通过。
+>
+> 另：Windows 的 curl **不认 `/dev/null`**，脚本里按平台切换为 `NUL`。
 >
 > #### 为什么「部署」按钮不用 `pricing.php#do` 这类锚点
 >
@@ -365,6 +388,7 @@ Tailwind v4 会自动把 `--color-brand-600` 映射为 `bg-brand-600`、`text-br
 - [ ] 部署 OAuth Worker 并更新 `backend.base_url`（当前占位 `https://sveltia-cms-auth.fusifen.workers.dev`）
 - [ ] 替换占位 SVG（`public/images/`）为真实截图或设计稿
 - [ ] 核对产品价格，更新 `priceCheckedAt` 字段
+- [ ] 运行 `npm run check:affiliate:live` 确认每个推广落地页都真实可达（防软 404）
 - [ ] 运行 `npm run cms:check` 确认字段一致性
 - [ ] 在 Google Search Console 提交 `sitemap-index.xml`
 
