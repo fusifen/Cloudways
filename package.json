@@ -20,7 +20,9 @@
     "cms:check": "node scripts/check-cms-sync.mjs",
     "check:links": "node scripts/check-links.mjs",
     "check:affiliate": "node scripts/check-affiliate-links.mjs",
-    "check:affiliate:live": "node scripts/check-affiliate-links.mjs --live"
+    "check:affiliate:live": "node scripts/check-affiliate-links.mjs --live",
+    "cf:dev": "npx wrangler@latest dev",
+    "deploy": "npm run build && npx wrangler@latest deploy"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",

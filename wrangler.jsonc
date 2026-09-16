@@ -1,0 +1,42 @@
+{
+  // ============================================================
+  // Cloudflare Workers 部署配置
+  // ------------------------------------------------------------
+  // 本项目是**纯静态站**（astro.config.mjs 里 output: 'static'），
+  // 所以这里只声明静态资源目录，不需要 main / 适配器 —— 没有 Worker 代码运行，
+  // 全部请求由 Cloudflare 的边缘静态资源服务直接响应。
+  //
+  // ⚠️ 为什么不部署到 Cloudflare Pages？
+  //    Cloudflare 已把 Pages 的能力整体并入 Workers，新功能（Secrets Store、
+  //    Workflows、Containers、Durable Objects 等）只上 Workers，官方对新项目
+  //    的建议也是 Workers。Pages 仍可用但已进入维护状态。
+  //    → 纯静态站在 Workers 上就是「assets-only Worker」，更简单也更快。
+  //
+  // ⚠️ 为什么必须把这份配置提交进仓库？
+  //    如果仓库里没有 wrangler 配置，Cloudflare 的 autoconfig 会检测到 Astro
+  //    并**按 SSR 方式**生成配置（引入 @astrojs/cloudflare 适配器、改 output）。
+  //    那对本项目是错的 —— 我们要的是纯静态托管。
+  // ============================================================
+
+  // ⚠️⚠️ 这个 name 必须与 Cloudflare 控制台里创建的 Worker 名称**完全一致**，
+  //       否则 Workers Builds 会以「Worker name 不匹配」为由直接构建失败。
+  //       如果你在控制台用了别的名字，改这里（或改控制台），两边保持一致。
+  "name": "cloudways-guide",
+
+  // 兼容性日期：决定 Workers 运行时启用哪些特性。建议保持在近半年内。
+  "compatibility_date": "2026-09-16",
+
+  "assets": {
+    // 构建产物目录。`npm run build` 输出到这里。
+    "directory": "./dist",
+
+    // 未命中任何静态文件时的行为：
+    //   "404-page"  → 返回 dist/404.html（本项目是 MPA，用这个）
+    //   "single-page-application" → 一律返回 index.html（SPA 才用，本项目不要）
+    // Astro 的 src/pages/404.astro 已生成 dist/404.html，故用 404-page。
+    "not_found_handling": "404-page"
+
+    // 说明：不需要 .assetsignore —— dist/ 是干净的构建产物，
+    // 已确认不含 node_modules、.git、source map 或 .env。
+  }
+}

@@ -1,7 +1,7 @@
 # Cloudways 中文指南
 
 基于 **Astro 7 + Tailwind CSS 4 + Content Collections + Sveltia CMS** 的 Cloudways 推广与内容聚合站点。
-静态输出、零服务器运维，可直接部署到 Cloudflare Pages / Vercel / GitHub Pages。
+静态输出、零服务器运维，可直接部署到 Cloudflare Workers / Vercel / GitHub Pages。
 
 - **产品线**：DigitalOcean、Amazon AWS、Google Cloud、Linode (Akamai)、Vultr 五家底层云厂商，共 22 个配置档位
 - **内容系统**：六大分类（教程 / 评测 / 对比 / 优惠 / 搬家 / 常见问题），支持分类筛选与分页
@@ -175,7 +175,8 @@ afraid-altitude/
 │   ├── generate-articles.mjs       # ★ 批量生成文章骨架（内置 21 个长尾选题）
 │   ├── sync-cms.mjs                # 同步 Sveltia CMS 主程序到 public/admin/（自托管）
 │   ├── check-cms-sync.mjs          # ★ 校验 CMS 字段与内容文件字段是否一致
-│   └── check-links.mjs             # ★ 站内链接体检，上线前跑一遍
+│   ├── check-links.mjs             # ★ 站内链接体检，上线前跑一遍
+│   └── check-affiliate-links.mjs   # ★ 推广落地页三层体检（配置 / 产物 / 联网）
 ├── src/
 │   ├── consts.ts                   # ★ 站点配置 + 推广链接管理 + 分类/厂商元数据
 │   ├── content.config.ts           # ★ Content Collections 的 Zod Schema
@@ -191,7 +192,8 @@ afraid-altitude/
 │   │   └── ArticleLayout.astro     # 文章详情布局（目录 + 侧边栏 CTA + FAQ）
 │   ├── pages/                      # 路由
 │   └── styles/global.css           # Tailwind 主题令牌与排版样式
-└── astro.config.mjs                # site / Tailwind 插件 / sitemap / i18n
+├── astro.config.mjs                # site / Tailwind 插件 / sitemap / i18n
+└── wrangler.jsonc                  # ★ Cloudflare Workers 部署配置（纯静态 assets-only）
 ```
 
 ---
@@ -295,23 +297,120 @@ npm run dev          # → http://localhost:4321
 npm run cms:check
 ```
 
-### 部署到 Vercel / Cloudflare Pages
+### 部署到 Cloudflare Workers
 
-Sveltia CMS 用 GitHub 作为内容存储，生产环境需要 OAuth 代理来完成登录：
+本项目是**纯静态站**（`output: 'static'`），部署到 Workers 就是所谓
+**assets-only Worker** —— 没有 Worker 代码运行，全部请求由 Cloudflare 边缘的
+静态资源服务直接响应。不需要 Astro 的 Cloudflare 适配器。
+
+#### 为什么是 Workers 而不是 Pages
+
+Cloudflare 已经把 Pages 的能力整体并入 Workers：新功能（Secrets Store、Workflows、
+Containers、Durable Objects 等）只上 Workers，Pages 进入维护状态，官方对新项目的
+建议也是 Workers。所以现在在控制台新建项目时**默认走 Workers 流程**，这是正常的，
+不是你的账号有问题。Pages 仍然可用、也不会强制迁移，但新项目没必要再选它。
+
+#### 仓库里必须有 `wrangler.jsonc`
+
+这一点很关键：**如果仓库里没有 wrangler 配置**，Cloudflare 的 autoconfig 会检测到
+Astro，然后按 **SSR** 方式生成配置（引入 `@astrojs/cloudflare` 适配器、改 `output`）。
+那对本项目是错的 —— 我们要的是纯静态托管。所以 `wrangler.jsonc` 必须提交进仓库。
+
+```jsonc
+{
+  "name": "cloudways-guide",          // ⚠️ 必须与控制台里的 Worker 名完全一致
+  "compatibility_date": "2026-09-16",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"  // 本项目是 MPA，用 404.html
+  }
+}
+```
+
+> `not_found_handling` 不要设成 `single-page-application` —— 那会让所有未命中路径
+> 都返回 `index.html`，对多页站点是错的（等于吃掉 404）。
+
+#### 控制台 Git 集成部署
+
+1. Cloudflare 控制台 → **Workers & Pages** → **Create application**
+   → **Import a repository** → 选 `fusifen/Cloudways`
+2. 配置构建：
+   - **Build command**：`npm run build`
+   - **Deploy command**：`npx wrangler deploy`
+3. **Worker 名称必须与 `wrangler.jsonc` 里的 `name` 一致**（这里是 `cloudways-guide`），
+   否则 Workers Builds 会以「Worker name 不匹配」直接构建失败
+4. 在 **Settings → Variables and Secrets** 配置环境变量（见下方）
+5. **Save and Deploy**，之后每次 push 到 `main` 都会自动构建部署
+
+环境变量：
+
+| 变量 | 值 | 说明 |
+| --- | --- | --- |
+| `SITE_URL` | `https://你的域名` | 影响 canonical / sitemap / OG 绝对地址，不要带结尾斜杠 |
+| `PUBLIC_CLOUDWAYS_AFFILIATE_ID` | `1379004` | 推广 ID |
+
+> Astro 7 需要 Node.js ≥ 22.12.0。Workers Builds 的默认 Node 版本满足要求；
+> 如果你手动改过版本，注意别低于这条线。
+
+#### 本地部署（可选）
+
+```bash
+npm run cf:dev    # 用 Workers 的本地运行时预览 dist/（含真实的 404 处理规则）
+npm run deploy    # 构建并部署到 Cloudflare
+```
+
+`npm run cf:dev` 值得跑一次 —— 它按 Workers 的真实路由规则提供 `dist/`，
+能提前发现「目录式 URL 是否能正确解析」「404 页面是否生效」这类问题。
+
+#### 绑定自定义域名
+
+**前提**：域名必须已经托管在同一个 Cloudflare 账号下（即域名的 NS 已指向 Cloudflare）。
+Workers 的 Custom Domain 要求一个 **active Cloudflare zone**。
+
+控制台操作：
+
+1. 控制台 → **Workers & Pages** → 选中你的 Worker
+2. **Settings** → **Domains & Routes** → **Add** → **Custom Domain**
+3. 输入域名（如 `cloudways-guide.com`），点 **Add Custom Domain**
+4. Cloudflare 会**自动创建 DNS 记录并签发证书**，不需要你手动加 CNAME
+
+要点：
+
+- **根域和 www 要分别添加**。Custom Domain 要求主机名精确匹配，
+  绑了 `example.com` 不会自动接管 `www.example.com`，反之亦然。
+  两个都想用就加两条，再用 Redirect Rule 把其中一个 301 到另一个。
+- **不能有同名 CNAME**。如果该主机名上已存在 CNAME 记录，先删掉再加 Custom Domain。
+- **不要在 DNS 里把 CNAME 指向 `xxx.workers.dev`** —— 那是错的，
+  会导致 522 超时。Custom Domain 是由 Cloudflare 内部直接指向 Worker 的。
+- 删掉 Custom Domain 后，对应的 **Advanced Certificate 不会自动删除**，
+  需要到 **SSL/TLS → Edge Certificates** 手动清理（不影响功能，只是清单会残留）。
+- 也可以写进配置（等价于控制台操作）：
+
+```jsonc
+{
+  "routes": [
+    { "pattern": "cloudways-guide.com", "custom_domain": true },
+    { "pattern": "www.cloudways-guide.com", "custom_domain": true }
+  ]
+}
+```
+
+> 绑好域名后，记得把 `SITE_URL` 环境变量改成真实域名并重新部署，
+> 否则 canonical、sitemap 与 OG 图仍指向旧地址。
+
+#### 线上后台（Sveltia CMS）登录
+
+后台页面 `/admin/` 会随站点一起部署，但要**用 GitHub 账号登录**还需一个 OAuth 代理：
 
 1. 在 GitHub 创建 OAuth App
    - Homepage URL：`https://你的域名`
    - Authorization callback URL：`https://你的OAuth代理域名/callback`
 2. 部署官方 OAuth Worker：<https://github.com/sveltia/sveltia-cms-auth>
-   把 `GITHUB_CLIENT_ID` 与 `GITHUB_CLIENT_SECRET` 写入 Worker 环境变量
-3. 修改 `public/admin/config.yml`：
-   - `backend.repo` 已设为 `fusifen/Cloudways`（如需换仓库再改）
-   - `backend.base_url` 改为你的 Worker 域名
-4. 推送代码，Vercel / Cloudflare Pages 会自动构建并部署
-5. 访问 `https://你的域名/admin/` 用 GitHub 账号登录
+   把 `GITHUB_CLIENT_ID` 与 `GITHUB_CLIENT_SECRET` 写入该 Worker 的环境变量
+3. 修改 `public/admin/config.yml` 的 `backend.base_url` 为你的 OAuth Worker 域名
+4. 访问 `https://你的域名/admin/` 用 GitHub 账号登录
 
-> 部署平台需要把构建命令设为 `npm run build`，输出目录设为 `dist`。
-> 环境变量 `SITE_URL` 与 `PUBLIC_CLOUDWAYS_AFFILIATE_ID` 在平台面板中配置。
+> 本地编辑不需要 OAuth —— 走浏览器的 File System Access API 即可，见上文。
 
 ---
 
@@ -384,7 +483,12 @@ Tailwind v4 会自动把 `--color-brand-600` 映射为 `bg-brand-600`、`text-br
 ## 部署前检查清单
 
 - [x] 代码仓库已绑定 `https://github.com/fusifen/Cloudways`（分支 `main`）
-- [ ] `.env` 中填写真实的 `SITE_URL`（推广 ID `1379004` 已配置）
+- [x] 已添加 `wrangler.jsonc`（纯静态 assets-only Worker 配置）
+- [ ] 在 Cloudflare 创建 Worker，**名称与 `wrangler.jsonc` 的 `name` 保持一致**（当前 `cloudways-guide`）
+- [ ] 配置环境变量 `SITE_URL`（不要带结尾斜杠）与 `PUBLIC_CLOUDWAYS_AFFILIATE_ID`
+- [ ] 绑定自定义域名（根域与 www 需**分别**添加，注意别建同名 CNAME）
+- [ ] 绑好域名后把 `SITE_URL` 改成真实域名并重新部署（否则 canonical / sitemap 仍是旧地址）
+- [ ] 本地跑一次 `npm run cf:dev`，确认目录式 URL 与 404 页面在 Workers 下行为正确
 - [ ] 部署 OAuth Worker 并更新 `backend.base_url`（当前占位 `https://sveltia-cms-auth.fusifen.workers.dev`）
 - [ ] 替换占位 SVG（`public/images/`）为真实截图或设计稿
 - [ ] 核对产品价格，更新 `priceCheckedAt` 字段
